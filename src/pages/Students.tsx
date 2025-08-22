@@ -494,7 +494,7 @@ const Students: React.FC = () => {
           ) : students.length > 0 ? (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {students.map((student) => (
-                <StudentCard key={student.id} student={student} />
+                <StudentCard key={student.enrollmentNumber} student={student} />
               ))}
             </div>
           ) : (

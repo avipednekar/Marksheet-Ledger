@@ -1,209 +1,110 @@
 import express from 'express';
-// import { readDatabase, writeDatabase, generateId } from '../utils/database.js';
+import Student from '../models/Student/student.model.js';
+import Result from '../models/Student/result.model.js';
+import MakeupHistory from '../models/Student/makeup.model.js';
 import { authenticateToken } from '../middleware/auth.js';
 
 const router = express.Router();
 
-// Get all students with filtering
-router.get('/', authenticateToken, (req, res) => {
+// Get all students with filtering and searching
+router.get('/', authenticateToken, async (req, res) => {
   try {
-    const { yearOfStudy, academicYear, semester, search, department } = req.query;
-    
-    const db = readDatabase();
-    let students = db.students;
+    const { yearOfStudy, academicYear, department, search } = req.query;
+    const filter = {};
 
-    // Apply filters
-    if (yearOfStudy) {
-      students = students.filter(s => s.yearOfStudy === parseInt(yearOfStudy));
-    }
-
-    if (academicYear) {
-      students = students.filter(s => s.academicYear === academicYear);
-    }
-
-    if (semester) {
-      students = students.filter(s => s.semester === parseInt(semester));
-    }
-
-    if (department) {
-      students = students.filter(s => s.department.toLowerCase().includes(department.toLowerCase()));
-    }
+    if (yearOfStudy) filter.yearOfStudy = yearOfStudy;
+    if (academicYear) filter.academicYear = academicYear;
+    if (department) filter.department = department;
 
     if (search) {
-      const searchLower = search.toLowerCase();
-      students = students.filter(s => 
-        s.name.toLowerCase().includes(searchLower) ||
-        s.enrollmentNumber.toLowerCase().includes(searchLower) ||
-        s.email.toLowerCase().includes(searchLower)
-      );
+      filter.$or = [
+        { name: { $regex: search, $options: 'i' } },
+        { enrollmentNumber: { $regex: search, $options: 'i' } },
+        { email: { $regex: search, $options: 'i' } },
+      ];
     }
+
+    const students = await Student.find(filter).sort({ createdAt: -1 });
 
     res.json({
       success: true,
       students,
-      total: students.length
+      total: students.length,
     });
   } catch (error) {
     console.error('Error fetching students:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error fetching students'
-    });
-  }
-});
-
-// Get single student
-router.get('/:id', authenticateToken, (req, res) => {
-  try {
-    const { id } = req.params;
-    const db = readDatabase();
-    const student = db.students.find(s => s.id === id);
-
-    if (!student) {
-      return res.status(404).json({
-        success: false,
-        message: 'Student not found'
-      });
-    }
-
-    res.json({
-      success: true,
-      student
-    });
-  } catch (error) {
-    console.error('Error fetching student:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error fetching student'
-    });
+    res.status(500).json({ success: false, message: 'Error fetching students' });
   }
 });
 
 // Add new student
-router.post('/', authenticateToken, (req, res) => {
+router.post('/', authenticateToken, async (req, res) => {
   try {
-    const studentData = req.body;
-    
-    // Validate required fields
-    const requiredFields = ['name', 'email', 'enrollmentNumber', 'department', 'yearOfStudy'];
-    for (const field of requiredFields) {
-      if (!studentData[field]) {
-        return res.status(400).json({
-          success: false,
-          message: `${field} is required`
-        });
-      }
-    }
+    const { enrollmentNumber, email } = req.body;
 
-    const db = readDatabase();
-    
-    // Check for duplicate enrollment number
-    const existingStudent = db.students.find(s => 
-      s.enrollmentNumber === studentData.enrollmentNumber
-    );
-    
+    // Check for duplicate enrollment number or email
+    const existingStudent = await Student.findOne({ $or: [{ enrollmentNumber }, { email }] });
     if (existingStudent) {
-      return res.status(409).json({
-        success: false,
-        message: 'Student with this enrollment number already exists'
-      });
+      const message = existingStudent.enrollmentNumber === enrollmentNumber
+        ? 'Student with this enrollment number already exists'
+        : 'Student with this email already exists';
+      return res.status(409).json({ success: false, message });
     }
 
-    const newStudent = {
-      id: generateId('ST'),
-      ...studentData,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-
-    db.students.push(newStudent);
-    writeDatabase(db);
-
+    const newStudent = await Student.create(req.body);
     res.status(201).json({
       success: true,
       message: 'Student added successfully',
-      student: newStudent
+      student: newStudent,
     });
   } catch (error) {
     console.error('Error adding student:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error adding student'
-    });
+    res.status(500).json({ success: false, message: 'Error adding student' });
   }
 });
 
 // Update student
-router.put('/:id', authenticateToken, (req, res) => {
+router.put('/:id', authenticateToken, async (req, res) => {
   try {
-    const { id } = req.params;
-    const updateData = req.body;
+    const updatedStudent = await Student.findByIdAndUpdate(req.params.id, req.body, {
+      new: true,
+      runValidators: true,
+    });
 
-    const db = readDatabase();
-    const studentIndex = db.students.findIndex(s => s.id === id);
-
-    if (studentIndex === -1) {
-      return res.status(404).json({
-        success: false,
-        message: 'Student not found'
-      });
+    if (!updatedStudent) {
+      return res.status(404).json({ success: false, message: 'Student not found' });
     }
-
-    // Update student
-    db.students[studentIndex] = {
-      ...db.students[studentIndex],
-      ...updateData,
-      updatedAt: new Date().toISOString()
-    };
-
-    writeDatabase(db);
 
     res.json({
       success: true,
       message: 'Student updated successfully',
-      student: db.students[studentIndex]
+      student: updatedStudent,
     });
   } catch (error) {
     console.error('Error updating student:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error updating student'
-    });
+    res.status(500).json({ success: false, message: 'Error updating student' });
   }
 });
 
 // Delete student
-router.delete('/:id', authenticateToken, (req, res) => {
+router.delete('/:id', authenticateToken, async (req, res) => {
   try {
-    const { id } = req.params;
-    const db = readDatabase();
-    
-    const studentIndex = db.students.findIndex(s => s.id === id);
-    
-    if (studentIndex === -1) {
-      return res.status(404).json({
-        success: false,
-        message: 'Student not found'
-      });
+    const studentId = req.params.id;
+    const student = await Student.findById(studentId);
+
+    if (!student) {
+      return res.status(404).json({ success: false, message: 'Student not found' });
     }
 
-    // Remove student and related results
-    db.students.splice(studentIndex, 1);
-    db.results = db.results.filter(r => r.studentId !== id);
-    db.makeupHistory = db.makeupHistory.filter(m => m.studentId !== id);
-    
-    writeDatabase(db);
+    // Delete student and all related data
+    await Result.deleteMany({ studentId });
+    await MakeupHistory.deleteMany({ studentId });
+    await Student.findByIdAndDelete(studentId);
 
-    res.json({
-      success: true,
-      message: 'Student deleted successfully'
-    });
+    res.json({ success: true, message: 'Student and all related results deleted successfully' });
   } catch (error) {
     console.error('Error deleting student:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error deleting student'
-    });
+    res.status(500).json({ success: false, message: 'Error deleting student' });
   }
 });
 
