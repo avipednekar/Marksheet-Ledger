@@ -1,6 +1,6 @@
 import jwt from 'jsonwebtoken';
 import Teacher from '../models/Teacher/Teacher.model.js'; // <-- Import the Mongoose model
-
+ 
 export const authenticateToken = async (req, res, next) => {
   try {
     const authHeader = req.headers['authorization'];

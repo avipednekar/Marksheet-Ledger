@@ -7,7 +7,7 @@ import { registerTeacher } from '../controllers/Teacher.controller.js';
 
 const router = express.Router();
 
-router.route("/register").post(registerTeacher)
+router.route("/register").post(registerTeacher);
 
 // ## Login route
 router.post('/login', async (req, res) => {
@@ -74,13 +74,13 @@ router.post('/login', async (req, res) => {
 });
 
 
-router.get('/verify', authenticateToken, (req, res) => {
-  res.json({
-    success: true,
-    message: 'Token is valid',
-    teacher: req.teacher,
-  });
-});
+// router.get('/verify', authenticateToken, (req, res) => {
+//   res.json({
+//     success: true,
+//     message: 'Token is valid',
+//     teacher: req.teacher,
+//   });
+// });
 
 router.post('/logout', authenticateToken, (req, res) => {
   res.json({

@@ -1,29 +1,39 @@
 import { errorHandler } from "../middleware/errorHandler.js";
 import Teacher from "../models/Teacher/Teacher.model.js";
 
-const registerTeacher = errorHandler(async (req,res)=>{
+const registerTeacher = async (req,res)=>{
     const {fullName, email, password, department}=req.body;
 
-
+    // console.log("Body: ",req.body);
     if(fullName===""){
-        throw new ApiError(400,"Fullname is required")
+        res.status(401).json({
+            message:"Fullname required"
+        })
     }
     if(email===""){
-        throw new ApiError(400,"Email is required")
+        res.status(401).json({
+            message:"email required"
+        })
     }
     if(department===""){
-        throw new ApiError(400,"department is required")
+        res.status(401).json({
+            message:"department required"
+        })
     }
     if(password===""){
-        throw new ApiError(400,"password is required")
+        res.status(401).json({
+            message:"password required"
+        })
     }
 
     const existedTeacher=await Teacher.findOne({
-        $or:[{email}]
+        email
     })
 
     if(existedTeacher){
-        throw new ApiError(409,"email already exists")
+        res.status(401).json({
+            message:"teacher already exist"
+        })
     }
 
     const teacher=await Teacher.create({
@@ -38,12 +48,14 @@ const registerTeacher = errorHandler(async (req,res)=>{
     )
 
     if(!createdTeacher){
-        throw new ApiError(500,"Something went wrong while registrating teacher")
+        res.status(401).json({
+            message:"TEacher not created"
+        })
     }
 
     return res.status(201).json(
-        new ApiResponse(200,createdUser,"Registration successfully")
+        {message:"Register successfully"}
     )
-})
+}
 
 export {registerTeacher};
