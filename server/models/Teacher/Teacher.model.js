@@ -1,3 +1,5 @@
+// models/Teacher/Teacher.model.js
+
 import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs'; 
 
@@ -21,6 +23,11 @@ const teacherSchema = new mongoose.Schema({
   department: {
     type: String,
     required: true
+  },
+  // --- ADDED ---
+  // Field to store the refresh token
+  refreshToken: {
+    type: String,
   }
 }, {
   timestamps: true 

@@ -1,4 +1,9 @@
+// AuthContext.tsx
+
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+
+// --- NEW: Use environment variable for the API URL ---
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 interface Teacher {
   id: string;
@@ -9,7 +14,7 @@ interface Teacher {
 
 interface AuthContextType {
   teacher: Teacher | null;
-  token: string | null;
+  token: string | null; // This is the in-memory accessToken
   login: (email: string, password: string) => Promise<{ success: boolean; message: string }>;
   logout: () => void;
   loading: boolean;
@@ -23,111 +28,85 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check for existing token on mount
-    const savedToken = localStorage.getItem('token');
-    const savedTeacher = localStorage.getItem('teacher');
+    const refreshAndVerify = async () => {
+      try {
+        // --- REFACTORED to use fetch ---
+        const refreshResponse = await fetch(`${API_URL}/auth/refresh`, {
+          method: 'POST',
+          credentials: 'include', // Crucial: sends cookies with the request
+        });
 
-    if (savedToken && savedTeacher) {
-      setToken(savedToken);
-      setTeacher(JSON.parse(savedTeacher));
-      
-      // Verify token is still valid
-      verifyToken(savedToken);
-    } else {
-      setLoading(false);
-    }
-  }, []);
+        if (!refreshResponse.ok) throw new Error('Refresh failed');
+        
+        const refreshData = await refreshResponse.json();
+        const newAccessToken = refreshData.accessToken;
+        setToken(newAccessToken);
 
-  const verifyToken = async (tokenToVerify: string) => {
-    try {
-      const response = await fetch('/api/auth/verify', {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${tokenToVerify}`,
-          'Content-Type': 'application/json'
-        }
-      });
+        // --- REFACTORED to use fetch ---
+        const verifyResponse = await fetch(`${API_URL}/auth/verify`, {
+          credentials: 'include',
+          headers: { 'Authorization': `Bearer ${newAccessToken}` }
+        });
 
-      const data = await response.json();
+        if (!verifyResponse.ok) throw new Error('Verification failed');
 
-      if (data.success) {
-        setTeacher(data.teacher);
-        setToken(tokenToVerify);
-      } else {
-        // Token is invalid, clear stored data
-        localStorage.removeItem('token');
-        localStorage.removeItem('teacher');
+        const verifyData = await verifyResponse.json();
+        setTeacher(verifyData.teacher);
+
+      } catch (error) {
         setTeacher(null);
         setToken(null);
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      console.error('Token verification failed:', error);
-      localStorage.removeItem('token');
-      localStorage.removeItem('teacher');
-      setTeacher(null);
-      setToken(null);
-    } finally {
-      setLoading(false);
-    }
-  };
+    };
+
+    refreshAndVerify();
+  }, []);
 
   const login = async (email: string, password: string): Promise<{ success: boolean; message: string }> => {
     try {
-      const response = await fetch('/api/auth/login', {
+      // --- REFACTORED to use fetch ---
+      const response = await fetch(`${API_URL}/auth/login`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ email, password })
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
       });
 
       const data = await response.json();
 
-      if (data.success) {
-        setTeacher(data.teacher);
-        setToken(data.token);
-        localStorage.setItem('token', data.token);
-        localStorage.setItem('teacher', JSON.stringify(data.teacher));
-        
-        return { success: true, message: data.message };
-      } else {
-        return { success: false, message: data.message };
+      if (!response.ok) {
+        return { success: false, message: data.message || 'Login failed.' };
       }
+      
+      setTeacher(data.teacher);
+      setToken(data.accessToken);
+      return { success: true, message: data.message };
+
     } catch (error) {
-      console.error('Login error:', error);
       return { success: false, message: 'Network error. Please try again.' };
     }
   };
 
   const logout = async () => {
+    const currentToken = token; // Use token from state at the time of logout call
     try {
-      if (token) {
-        await fetch('/api/auth/logout', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        });
-      }
+      // --- REFACTORED to use fetch ---
+      await fetch(`${API_URL}/auth/logout`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Authorization': `Bearer ${currentToken}` }
+      });
     } catch (error) {
-      console.error('Logout error:', error);
+      console.error('Logout failed:', error);
     } finally {
-      // Clear local state regardless of API call result
       setTeacher(null);
       setToken(null);
-      localStorage.removeItem('token');
-      localStorage.removeItem('teacher');
     }
   };
 
-  const value: AuthContextType = {
-    teacher,
-    token,
-    login,
-    logout,
-    loading
-  };
+  const value: AuthContextType = { teacher, token, login, logout, loading };
 
   return (
     <AuthContext.Provider value={value}>
