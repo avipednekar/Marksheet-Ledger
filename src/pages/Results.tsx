@@ -5,7 +5,6 @@ import {
 import { useAuth } from '../context/AuthContext';
 import LoadingSpinner from '../components/LoadingSpinner';
 
-// --- Updated Subject Interface ---
 interface Subject {
   ise: number;
   mse: number;
@@ -15,7 +14,6 @@ interface Subject {
   status: string;
 }
 
-// --- Updated Result Interface ---
 interface Result {
   id: string;
   studentId: string;
@@ -33,6 +31,16 @@ interface Result {
   makeupRequired: string[];
   createdAt: string;
   updatedAt: string;
+}
+
+interface Student {
+  id: string;
+  name: string;
+  enrollmentNumber: string;
+  department: string;
+  yearOfStudy: number;
+  semester: number;
+  academicYear: string;
 }
 
 const Results: React.FC = () => {
@@ -150,6 +158,7 @@ const Results: React.FC = () => {
         return 'text-gray-600 bg-gray-50';
     }
   };
+
   const ResultCard: React.FC<{ result: Result }> = ({ result }) => (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
       <div className="flex items-start justify-between mb-4">
@@ -303,26 +312,84 @@ const Results: React.FC = () => {
     </div>
   );
 
-  // --- Heavily Updated AddResultModal ---
   const AddResultModal: React.FC<{ onClose: () => void; onAdd: (data: any) => void; }> = ({ onClose, onAdd }) => {
-    const [studentId, setStudentId] = useState('');
-    const [academicYear, setAcademicYear] = useState('2024-25');
-    const [yearOfStudy, setYearOfStudy] = useState('');
-    const [semester, setSemester] = useState('');
+    const { token } = useAuth();
+    
+    // Form state
+    const [allStudents, setAllStudents] = useState<Student[]>([]);
+    const [selectedStudentId, setSelectedStudentId] = useState('');
+    const [formData, setFormData] = useState({
+      enrollmentNumber: '',
+      academicYear: '2024-25',
+      yearOfStudy: 0,
+      semester: 0,
+      department: '',
+    });
     const [subjects, setSubjects] = useState([{ name: '', ise: '', mse: '', ese: '' }]);
-    const [availableSemesters, setAvailableSemesters] = useState<number[]>([]);
+    
+    // Loading states
+    const [isStudentsLoading, setIsStudentsLoading] = useState(true);
+    const [isSubjectsLoading, setIsSubjectsLoading] = useState(false);
 
+    // 1. Fetch all students when the modal opens
     useEffect(() => {
-      if (yearOfStudy) {
-        const yearNum = parseInt(yearOfStudy, 10);
-        const newSemesters = [(yearNum * 2) - 1, yearNum * 2];
-        setAvailableSemesters(newSemesters);
-        if (!newSemesters.includes(parseInt(semester, 10))) setSemester('');
+      const fetchAllStudents = async () => {
+        setIsStudentsLoading(true);
+        try {
+          const response = await fetch('/api/students', {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          const data = await response.json();
+          if (data.success) setAllStudents(data.students);
+        } catch (err) { console.error("Failed to fetch students", err); }
+        finally { setIsStudentsLoading(false); }
+      };
+      fetchAllStudents();
+    }, [token]);
+
+    // 2. When a student is selected, auto-populate their details
+    useEffect(() => {
+      if (selectedStudentId) {
+        const student = allStudents.find(s => s.id === selectedStudentId);
+        if (student) {
+          setFormData({
+            enrollmentNumber: student.enrollmentNumber,
+            academicYear: student.academicYear,
+            yearOfStudy: student.yearOfStudy,
+            semester: student.semester,
+            department: student.department,
+          });
+        }
       } else {
-        setAvailableSemesters([]);
-        setSemester('');
+        setFormData({ enrollmentNumber: '', academicYear: '2024-25', yearOfStudy: 0, semester: 0, department: '' });
       }
-    }, [yearOfStudy]);
+    }, [selectedStudentId, allStudents]);
+
+    // 3. When student details are populated, fetch the default subjects
+    useEffect(() => {
+      const fetchDefaultSubjects = async () => {
+        if (formData.yearOfStudy && formData.semester && formData.department) {
+          setIsSubjectsLoading(true);
+          setSubjects([]);
+          try {
+            const params = new URLSearchParams({
+              year: String(formData.yearOfStudy),
+              semester: String(formData.semester),
+              department: formData.department,
+            });
+            const response = await fetch(`/api/subjects?${params.toString()}`, {
+              headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await response.json();
+            if (data.success) {
+              setSubjects(data.subjects.map((s: { name: string }) => ({ name: s.name, ise: '', mse: '', ese: '' })));
+            } else { setSubjects([{ name: '', ise: '', mse: '', ese: '' }]); }
+          } catch (error) { setSubjects([{ name: '', ise: '', mse: '', ese: '' }]); }
+          finally { setIsSubjectsLoading(false); }
+        }
+      };
+      fetchDefaultSubjects();
+    }, [formData.yearOfStudy, formData.semester, formData.department, token]);
 
     const handleSubjectChange = (index: number, field: 'name' | 'ise' | 'mse' | 'ese', value: string) => {
       const newSubjects = [...subjects];
@@ -336,86 +403,78 @@ const Results: React.FC = () => {
     const handleSubmit = (e: React.FormEvent) => {
       e.preventDefault();
       const resultData = {
-        studentId,
-        academicYear,
-        yearOfStudy: Number(yearOfStudy),
-        semester: Number(semester),
-        examType: 'ESE', // The final semester evaluation is ESE
+        studentId: formData.enrollmentNumber,
+        academicYear: formData.academicYear,
+        yearOfStudy: formData.yearOfStudy,
+        semester: formData.semester,
+        examType: 'ESE',
         subjects: subjects.reduce((acc, subject) => {
           if (subject.name) {
             acc[subject.name] = { ise: Number(subject.ise), mse: Number(subject.mse), ese: Number(subject.ese) };
           }
           return acc;
-        }, {} as Record<string, { ise: number; mse: number; ese: number; }>),
+        }, {} as Record<string, any>),
       };
       onAdd(resultData);
     };
-    
-    const getOrdinalYear = (n: number) => {
-      const s = ["th", "st", "nd", "rd"], v = n % 100;
-      return n + (s[(v - 20) % 10] || s[v] || s[0]);
-    };
 
-    return (
+
+return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
         <div className="bg-white rounded-lg shadow-xl max-w-3xl w-full max-h-screen">
           <form onSubmit={handleSubmit}>
-            <div className="p-6 border-b border-gray-200 flex items-center justify-between">
-              <h2 className="text-xl font-semibold text-gray-900">Add Final Semester Result</h2>
-              <button type="button" onClick={onClose} className="text-gray-400 hover:text-gray-600 p-1 rounded">✕</button>
-            </div>
-
+            <div className="p-6 border-b border-gray-200"><h2 className="text-xl font-semibold text-gray-900">Add Semester Result</h2></div>
             <div className="p-6 space-y-4 overflow-y-auto max-h-[70vh]">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="lg:col-span-3">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Select Student *</label>
+                  {isStudentsLoading ? <LoadingSpinner /> : (
+                    <select value={selectedStudentId} onChange={(e) => setSelectedStudentId(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg" required>
+                      <option value="">-- Select a Student --</option>
+                      {allStudents.map(student => (
+                        <option key={student.id} value={student.id}>{student.name} ({student.enrollmentNumber})</option>
+                      ))}
+                    </select>
+                  )}
+                </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Enrollment ID</label>
-                  <input type="text" value={studentId} onChange={(e) => setStudentId(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg" required />
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Department</label>
+                  <input type="text" value={formData.department} className="w-full px-3 py-2 border bg-gray-100 border-gray-300 rounded-lg" disabled />
                 </div>
                  <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Academic Year</label>
-                  <select value={academicYear} onChange={(e) => setAcademicYear(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg">
-                    <option value="2023-24">2023-24</option>
-                    <option value="2024-25">2024-25</option>
-                    <option value="2025-26">2025-26</option>
-                  </select>
-                </div>
-                <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Year of Study</label>
-                  <select value={yearOfStudy} onChange={(e) => setYearOfStudy(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg" required>
-                    <option value="">Select Year</option>
-                    {[1, 2, 3, 4].map(y => <option key={y} value={y}>{getOrdinalYear(y)} Year</option>)}
-                  </select>
+                  <input type="text" value={formData.yearOfStudy || ''} className="w-full px-3 py-2 border bg-gray-100 border-gray-300 rounded-lg" disabled />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Semester</label>
-                  <select value={semester} onChange={(e) => setSemester(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg" required disabled={!yearOfStudy}>
-                    <option value="">Select Semester</option>
-                    {availableSemesters.map(s => <option key={s} value={s}>Semester {s}</option>)}
-                  </select>
+                  <input type="text" value={formData.semester || ''} className="w-full px-3 py-2 border bg-gray-100 border-gray-300 rounded-lg" disabled />
                 </div>
               </div>
-
               <div>
                 <h3 className="font-semibold text-gray-900 mb-2">Subjects & Marks</h3>
-                <div className="space-y-3">
-                  {subjects.map((subject, index) => (
-                    <div key={index} className="grid grid-cols-12 gap-2 items-center">
-                      <input type="text" placeholder="Subject Name" value={subject.name} onChange={(e) => handleSubjectChange(index, 'name', e.target.value)} className="col-span-12 md:col-span-5 px-3 py-2 border border-gray-300 rounded-lg" required />
-                      <input type="number" placeholder="ISE (20)" value={subject.ise} onChange={(e) => handleSubjectChange(index, 'ise', e.target.value)} max="20" className="col-span-4 md:col-span-2 px-3 py-2 border border-gray-300 rounded-lg" required />
-                      <input type="number" placeholder="MSE (30)" value={subject.mse} onChange={(e) => handleSubjectChange(index, 'mse', e.target.value)} max="30" className="col-span-4 md:col-span-2 px-3 py-2 border border-gray-300 rounded-lg" required />
-                      <input type="number" placeholder="ESE (50)" value={subject.ese} onChange={(e) => handleSubjectChange(index, 'ese', e.target.value)} max="50" className="col-span-4 md:col-span-2 px-3 py-2 border border-gray-300 rounded-lg" required />
-                      <div className="col-span-12 md:col-span-1 flex justify-end">
-                        <button type="button" onClick={() => removeSubject(index)} className="p-2 text-red-500 hover:bg-red-50 rounded-lg"><Trash2 className="h-4 w-4" /></button>
+                {isSubjectsLoading ? (
+                  <div className="flex items-center justify-center p-4"><LoadingSpinner /><span className="ml-2">Loading Subjects...</span></div>
+                ) : (
+                  <div className="space-y-3">
+                    {subjects.map((subject, index) => (
+                      <div key={index} className="grid grid-cols-12 gap-2 items-center">
+                        <input type="text" value={subject.name} onChange={(e) => handleSubjectChange(index, 'name', e.target.value)} className="col-span-12 md:col-span-5 px-3 py-2 border border-gray-300 rounded-lg" required />
+                        <input type="number" placeholder="ISE (20)" value={subject.ise} onChange={(e) => handleSubjectChange(index, 'ise', e.target.value)} max="20" min="0" className="col-span-4 md:col-span-2 px-3 py-2 border border-gray-300 rounded-lg" required />
+                        <input type="number" placeholder="MSE (30)" value={subject.mse} onChange={(e) => handleSubjectChange(index, 'mse', e.target.value)} max="30" min="0" className="col-span-4 md:col-span-2 px-3 py-2 border border-gray-300 rounded-lg" required />
+                        <input type="number" placeholder="ESE (50)" value={subject.ese} onChange={(e) => handleSubjectChange(index, 'ese', e.target.value)} max="50" min="0" className="col-span-4 md:col-span-2 px-3 py-2 border border-gray-300 rounded-lg" required />
+                        <div className="col-span-12 md:col-span-1 flex justify-end">
+                          <button type="button" onClick={() => removeSubject(index)} className="p-2 text-red-500 hover:bg-red-50 rounded-lg"><Trash2 className="h-4 w-4" /></button>
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
-                <button type="button" onClick={addSubject} className="mt-3 inline-flex items-center px-3 py-2 text-sm text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 rounded-lg"><Plus className="h-4 w-4 mr-2" />Add Subject</button>
+                    ))}
+                  </div>
+                )}
+                <button type="button" onClick={addSubject} className="mt-3 inline-flex items-center px-3 py-2 text-sm text-blue-600 bg-blue-50 rounded-lg"><Plus className="h-4 w-4 mr-2" />Add Subject Manually</button>
               </div>
             </div>
             <div className="p-6 border-t border-gray-200 flex justify-end space-x-3">
-              <button type="button" onClick={onClose} className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">Cancel</button>
-              <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Save Result</button>
+              <button type="button" onClick={onClose} className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg">Cancel</button>
+              <button type="submit" disabled={!selectedStudentId} className="px-4 py-2 bg-blue-600 text-white rounded-lg disabled:opacity-50">Save Result</button>
             </div>
           </form>
         </div>

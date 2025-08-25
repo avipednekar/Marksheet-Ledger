@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Sidebar from './components/Sidebar';
@@ -6,12 +6,13 @@ import Dashboard from './pages/Dashboard';
 import Students from './pages/Students';
 import Results from './pages/Results';
 import Login from './pages/Login';
+import UnderProcess from './pages/UnderProcess';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import LoadingSpinner from './components/LoadingSpinner';
 
 const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { teacher } = useAuth();
+  // const { teacher } = useAuth();
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -99,6 +100,22 @@ function App() {
               element={
                 <ProtectedRoute>
                   <Results />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/analytics" 
+              element={
+                <ProtectedRoute>
+                  <UnderProcess />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/settings" 
+              element={
+                <ProtectedRoute>
+                  <UnderProcess />
                 </ProtectedRoute>
               } 
             />

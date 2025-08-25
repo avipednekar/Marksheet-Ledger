@@ -3,13 +3,14 @@ import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
-import cookieParser from 'cookie-parser'; // 🍪 IMPORT THIS
+import cookieParser from 'cookie-parser'; 
 import { connectDB } from './utils/database.js';
 
 import authRoutes from './routes/authRoutes.js';
 import studentRoutes from './routes/studentRoutes.js';
 import resultRoutes from './routes/resultRoutes.js';
 import dashboardRoutes from './routes/dashboardRoutes.js';
+import subjectRoutes from './routes/subjectRoutes.js';
 
 // Import middleware
 import { errorHandler } from './middleware/errorHandler.js';
@@ -43,6 +44,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/students', studentRoutes);
 app.use('/api/results', resultRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/subjects', subjectRoutes); 
 
 app.use(errorHandler);
 
