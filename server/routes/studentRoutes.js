@@ -9,30 +9,35 @@ const router = express.Router();
 // Get all students with filtering and searching
 router.get('/', authenticateToken, async (req, res) => {
   try {
-    const { yearOfStudy, academicYear, department, search } = req.query;
-    const filter = {};
+    const studentsFromDB = await Student.find(req.query).sort({ createdAt: -1 });
 
-    if (yearOfStudy) filter.yearOfStudy = yearOfStudy;
-    if (academicYear) filter.academicYear = academicYear;
-    if (department) filter.department = department;
+    const students = studentsFromDB.map(student => {
+      const admissionStartYear = parseInt(student.admissionYear.split('-')[0]);
+      const currentYear = new Date().getFullYear();
+      const currentMonth = new Date().getMonth(); // 0-11
 
-    if (search) {
-      filter.$or = [
-        { name: { $regex: search, $options: 'i' } },
-        { enrollmentNumber: { $regex: search, $options: 'i' } },
-        { email: { $regex: search, $options: 'i' } },
-      ];
-    }
+      // Assuming academic year starts in August (month 7)
+      let academicYearOffset = currentYear - admissionStartYear;
+      if (currentMonth < 7) {
+        academicYearOffset--;
+      }
 
-    const students = await Student.find(filter).sort({ createdAt: -1 });
-
-    res.json({
-      success: true,
-      students,
-      total: students.length,
+      let yearOfStudy = academicYearOffset + 1;
+      if (student.admissionType === 'DSY') {
+        yearOfStudy += 1;
+      }
+      
+      const semester = yearOfStudy * 2 - (currentMonth > 0 && currentMonth < 7 ? 0 : 1);
+      
+      return {
+        ...student.toObject(),
+        yearOfStudy: yearOfStudy > 4 ? 'Graduated' : yearOfStudy,
+        semester: semester > 8 ? 'N/A' : semester,
+      };
     });
+
+    res.json({ success: true, students, total: students.length });
   } catch (error) {
-    console.error('Error fetching students:', error);
     res.status(500).json({ success: false, message: 'Error fetching students' });
   }
 });
@@ -40,25 +45,20 @@ router.get('/', authenticateToken, async (req, res) => {
 // Add new student
 router.post('/', authenticateToken, async (req, res) => {
   try {
-    const { enrollmentNumber, email } = req.body;
+    const { enrollmentNumber, email, admissionYear } = req.body;
+    
+    if (!admissionYear) {
+        return res.status(400).json({ success: false, message: 'Admission Year is required.' });
+    }
 
-    // Check for duplicate enrollment number or email
     const existingStudent = await Student.findOne({ $or: [{ enrollmentNumber }, { email }] });
     if (existingStudent) {
-      const message = existingStudent.enrollmentNumber === enrollmentNumber
-        ? 'Student with this enrollment number already exists'
-        : 'Student with this email already exists';
-      return res.status(409).json({ success: false, message });
+      return res.status(409).json({ success: false, message: 'Student with this enrollment number or email already exists' });
     }
 
     const newStudent = await Student.create(req.body);
-    res.status(201).json({
-      success: true,
-      message: 'Student added successfully',
-      student: newStudent,
-    });
+    res.status(201).json({ success: true, message: 'Student added successfully', student: newStudent });
   } catch (error) {
-    console.error('Error adding student:', error);
     res.status(500).json({ success: false, message: 'Error adding student' });
   }
 });
@@ -105,6 +105,45 @@ router.delete('/:id', authenticateToken, async (req, res) => {
   } catch (error) {
     console.error('Error deleting student:', error);
     res.status(500).json({ success: false, message: 'Error deleting student' });
+  }
+});
+
+// Add this new route to your studentRoutes.js file
+
+router.get('/:enrollmentId/academic-status', authenticateToken, async (req, res) => {
+  try {
+    const student = await Student.findOne({ enrollmentNumber: req.params.enrollmentId });
+    if (!student) {
+      return res.status(404).json({ success: false, message: 'Student not found' });
+    }
+
+    const existingResults = await Result.find({ studentId: student._id }).sort({ semester: 1 });
+    
+    let nextSemester = (student.admissionType === 'DSY') ? 3 : 1;
+    if (existingResults.length > 0) {
+        nextSemester = existingResults[existingResults.length - 1].semester + 1;
+    }
+
+    if (nextSemester > 8) {
+      return res.status(400).json({ success: false, message: 'Student has completed all 8 semesters.' });
+    }
+
+    const admissionStartYear = parseInt(student.admissionYear.split('-')[0]);
+    const yearOffset = Math.floor((nextSemester - 1) / 2);
+    const academicYearStart = admissionStartYear + yearOffset;
+    const academicYear = `${academicYearStart}-${(academicYearStart + 1).toString().slice(-2)}`;
+
+    res.json({
+      success: true,
+      student: { id: student._id, name: student.name, department: student.department },
+      nextResultSlot: {
+        yearOfStudy: Math.ceil(nextSemester / 2),
+        semester: nextSemester,
+        academicYear,
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Server error' });
   }
 });
 

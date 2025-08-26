@@ -3,9 +3,11 @@ import Teacher from '../models/Teacher/Teacher.model.js'; // <-- Import the Mong
  
 export const authenticateToken = async (req, res, next) => {
   try {
-    const authHeader = req.headers['authorization'];
-    const token = (authHeader && authHeader.split(' ')[1]) || req.body.accesToken;
+    // const authHeader = req.headers['authorization'];
+    const token = req.cookies?.accessToken || req.header("Authorization")?.replace("Bearer ", "")
 
+    // console.log(token);
+    
     if (!token) {
       return res.status(401).json({
         success: false,

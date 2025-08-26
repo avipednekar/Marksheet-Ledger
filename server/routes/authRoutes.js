@@ -1,5 +1,3 @@
-// routes/authRoutes.js
-
 import express from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
@@ -41,12 +39,16 @@ router.post('/login', async (req, res) => {
     teacher.refreshToken = refreshToken;
     await teacher.save();
 
-    // --- NEW: Set refresh token in a secure httpOnly cookie ---
+    res.cookie('accessToken', accessToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'strict' 
+    });
+
     res.cookie('refreshToken', refreshToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+      secure: true,
+      sameSite: 'strict' 
     });
 
     // --- CHANGED: Do NOT send the refresh token in the response body ---
