@@ -6,7 +6,6 @@ import mongoose from 'mongoose';
 
 const router = express.Router();
 
-// Helper function to calculate grade based on TOTAL marks (out of 100)
 const calculateGrade = (totalMarks) => {
   if (totalMarks >= 90) return 'A+';
   if (totalMarks >= 80) return 'A';
@@ -17,8 +16,6 @@ const calculateGrade = (totalMarks) => {
   return 'F';
 };
 
-// --- POST /api/results ---
-// Adds a new result for a student with the new evaluation criteria
 router.post('/', authenticateToken, async (req, res) => {
   try {
     const { studentId, yearOfStudy, academicYear, semester, examType, subjects } = req.body;
@@ -67,14 +64,14 @@ router.post('/', authenticateToken, async (req, res) => {
 
     const subjectCount = processedSubjects.size;
     const overallStatus = failedSubjects.length > 0 ? 'FAIL' : 'PASS';
-    const percentage = subjectCount > 0 ? (grandTotalMarks / subjectCount) : 0; // Percentage is now based on total marks out of (subjects * 100)
+    const percentage = subjectCount > 0 ? (grandTotalMarks / subjectCount) : 0; 
 
     const newResult = await Result.create({
       studentId: student._id,
       yearOfStudy,
       academicYear,
       semester,
-      examType: 'ESE', // The final result is always an ESE-type result
+      examType: 'ESE', 
       subjects: processedSubjects,
       totalMarks: grandTotalMarks,
       percentage: parseFloat(percentage.toFixed(2)),
@@ -93,42 +90,18 @@ router.post('/', authenticateToken, async (req, res) => {
   }
 });
 
-// --- Other routes (GET, PUT, DELETE) ---
-// Note: The PUT route should also be updated with the same calculation logic if you allow editing subjects.
-// GET and DELETE routes remain largely the same as they don't perform calculations.
-// (The existing GET, PUT, DELETE routes from the previous step are assumed to be here)
-
-// --- GET /api/results ---
-// Fetches results with advanced filtering, server-side searching, and pagination
 router.get('/', authenticateToken, async (req, res) => {
   try {
-    const {
-      yearOfStudy,
-      academicYear,
-      semester,
-      examType,
-      status,
-      search, // Search term from the frontend
-      limit = 20, // Default limit to 20 results per page
-      page = 1
-    } = req.query;
+    const { yearOfStudy, academicYear, semester, examType, status, search, limit = 20, page = 1 } = req.query;
 
     const pipeline = [];
 
-    // Stage 1: Lookup to join with the students collection to get student details for searching
     pipeline.push({
-      $lookup: {
-        from: 'students', // The name of the students collection in MongoDB
-        localField: 'studentId',
-        foreignField: '_id',
-        as: 'studentInfo'
-      }
+      $lookup: { from: 'students', localField: 'studentId', foreignField: '_id', as: 'studentInfo' }
     }, {
-      // Deconstruct the studentInfo array field from the input documents to output a document for each element
       $unwind: '$studentInfo'
     });
 
-    // Stage 2: Build the match stage for filtering and searching
     const matchStage = {};
     if (yearOfStudy) matchStage.yearOfStudy = parseInt(yearOfStudy);
     if (academicYear) matchStage.academicYear = academicYear;
@@ -136,7 +109,6 @@ router.get('/', authenticateToken, async (req, res) => {
     if (examType) matchStage.examType = examType;
     if (status) matchStage.overallStatus = status;
 
-    // Add server-side search logic
     if (search) {
       matchStage.$or = [
         { 'studentInfo.name': { $regex: search, $options: 'i' } },
@@ -148,23 +120,37 @@ router.get('/', authenticateToken, async (req, res) => {
       pipeline.push({ $match: matchStage });
     }
 
-    // Stage 3: Add fields to format the output to match the frontend's expectation
-    pipeline.push({
-      $addFields: {
-        studentName: '$studentInfo.name',
-        enrollmentNumber: '$studentInfo.enrollmentNumber'
-      }
-    });
-
-    // Stage 4: Run a parallel query to count the total matching documents for pagination
     const total = await Result.aggregate([...pipeline, { $count: 'total' }]);
     const totalResults = total.length > 0 ? total[0].total : 0;
     const totalPages = Math.ceil(totalResults / limit);
 
-    // Stage 5: Add sorting, skipping, and limiting for pagination
     pipeline.push({ $sort: { createdAt: -1 } });
     pipeline.push({ $skip: (parseInt(page) - 1) * parseInt(limit) });
     pipeline.push({ $limit: parseInt(limit) });
+
+    // --- KEY CHANGE: Add a $project stage to reshape the output ---
+    pipeline.push({
+      $project: {
+        _id: 0, // Exclude the original _id
+        id: '$_id', // Create a new 'id' field from the value of '_id'
+        
+        // Explicitly include all other fields you want to send to the frontend
+        studentName: '$studentInfo.name',
+        enrollmentNumber: '$studentInfo.enrollmentNumber',
+        yearOfStudy: 1,
+        academicYear: 1,
+        semester: 1,
+        examType: 1,
+        subjects: 1,
+        overallStatus: 1,
+        totalMarks: 1,
+        percentage: 1,
+        failedSubjects: 1,
+        makeupRequired: 1,
+        createdAt: 1,
+        updatedAt: 1
+      }
+    });
 
     const results = await Result.aggregate(pipeline);
 
@@ -175,15 +161,13 @@ router.get('/', authenticateToken, async (req, res) => {
       page: parseInt(page),
       totalPages,
     });
-
   } catch (error) {
     console.error('Error fetching results:', error);
     res.status(500).json({ success: false, message: 'Error fetching results' });
   }
 });
 
-// --- GET /api/results/:id ---
-// Fetches a single result by its ID, populating student data
+
 router.get('/:id', authenticateToken, async (req, res) => {
   try {
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
@@ -197,7 +181,6 @@ router.get('/:id', authenticateToken, async (req, res) => {
       return res.status(404).json({ success: false, message: 'Result not found' });
     }
 
-    // Format to match the frontend's expected flat structure
     const formattedResult = {
         ...result.toObject(),
         studentName: result.studentId?.name || 'Unknown',
@@ -210,56 +193,81 @@ router.get('/:id', authenticateToken, async (req, res) => {
     res.status(500).json({ success: false, message: 'Error fetching result' });
   }
 });
-// --- PUT /api/results/:id ---
-// Updates an existing result (functionality inferred from "Edit" button)
+
 router.put('/:id', authenticateToken, async (req, res) => {
     try {
         const { id } = req.params;
-        const updateData = req.body;
+        const { subjects } = req.body;
 
-        // If subjects are being updated, we must recalculate everything
-        if (updateData.subjects) {
-            const processedSubjects = new Map();
-            let totalMarks = 0;
-            const failedSubjects = [];
-
-            for (const [subjectName, data] of Object.entries(updateData.subjects)) {
-                const marksNum = Number(data.marks);
-                const grade = calculateGrade(marksNum);
-                const status = marksNum >= 40 ? 'PASS' : 'FAIL';
-
-                processedSubjects.set(subjectName, { marks: marksNum, grade, status });
-                totalMarks += marksNum;
-                if (status === 'FAIL') failedSubjects.push(subjectName);
-            }
-            
-            const subjectCount = processedSubjects.size;
-            updateData.subjects = processedSubjects;
-            updateData.totalMarks = totalMarks;
-            updateData.percentage = subjectCount > 0 ? parseFloat(((totalMarks / (subjectCount * 100)) * 100).toFixed(2)) : 0;
-            updateData.overallStatus = failedSubjects.length > 0 ? 'FAIL' : 'PASS';
-            updateData.failedSubjects = failedSubjects;
-            updateData.makeupRequired = failedSubjects;
+        if (!subjects) {
+            return res.status(400).json({ success: false, message: 'Subjects data is required for an update.' });
         }
 
+        const processedSubjects = new Map();
+        let grandTotalMarks = 0;
+        const failedSubjects = [];
+
+        for (const [subjectName, marks] of Object.entries(subjects)) {
+            const ise = Number(marks.ise) || 0;
+            const mse = Number(marks.mse) || 0;
+            const ese = Number(marks.ese) || 0;
+
+            if (ise < 0 || ise > 20 || mse < 0 || mse > 30 || ese < 0 || ese > 50) {
+                return res.status(400).json({ success: false, message: `Invalid marks for subject ${subjectName}.` });
+            }
+
+            const subjectTotal = ise + mse + ese;
+            const subjectStatus = (ese >= 20 && subjectTotal >= 40) ? 'PASS' : 'FAIL';
+            const subjectGrade = calculateGrade(subjectTotal);
+
+            if (subjectStatus === 'FAIL') {
+                failedSubjects.push(subjectName);
+            }
+
+            processedSubjects.set(subjectName, {
+                ise, mse, ese,
+                total: subjectTotal,
+                grade: subjectGrade,
+                status: subjectStatus
+            });
+            grandTotalMarks += subjectTotal;
+        }
+        
+        const subjectCount = processedSubjects.size;
+        const overallStatus = failedSubjects.length > 0 ? 'FAIL' : 'PASS';
+        const percentage = subjectCount > 0 ? (grandTotalMarks / subjectCount) : 0;
+        
+        const updateData = {
+            subjects: processedSubjects,
+            totalMarks: grandTotalMarks,
+            percentage: parseFloat(percentage.toFixed(2)),
+            overallStatus,
+            failedSubjects,
+            makeupRequired: failedSubjects
+        };
+
         const updatedResult = await Result.findByIdAndUpdate(id, updateData, {
-            new: true, // Return the updated document
+            new: true,
             runValidators: true,
-        });
+        }).populate('studentId', 'name enrollmentNumber');
 
         if (!updatedResult) {
             return res.status(404).json({ success: false, message: 'Result not found' });
         }
+        
+        const formattedResult = {
+            ...updatedResult.toObject(),
+            studentName: updatedResult.studentId?.name || 'Unknown',
+            enrollmentNumber: updatedResult.studentId?.enrollmentNumber || 'Unknown'
+        };
 
-        res.json({ success: true, message: 'Result updated successfully', result: updatedResult });
+        res.json({ success: true, message: 'Result updated successfully', result: formattedResult });
     } catch (error) {
         console.error('Error updating result:', error);
         res.status(500).json({ success: false, message: 'Error updating result' });
     }
 });
 
-// --- DELETE /api/results/:id ---
-// Deletes a result (standard functionality for completeness)
 router.delete('/:id', authenticateToken, async (req, res) => {
     try {
         const deletedResult = await Result.findByIdAndDelete(req.params.id);
