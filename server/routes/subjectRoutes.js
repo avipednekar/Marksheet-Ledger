@@ -1,41 +1,34 @@
 // routes/subjectRoutes.js
 import express from 'express';
-import { subjectMappings } from '../data/subjects.js';
+import { getSubjectsForStudent } from '../utils/subjectHelper.js';
 import { authenticateToken } from '../middleware/auth.js';
 
 const router = express.Router();
 
-const circuitBranches = ["Computer Science", "AIML", "Electronics", "Electrical", "Information Technology"];
-const coreBranches = ["Civil", "Mechanical", "Biotechnology", "Civil and Environment"];
+router.get('/', authenticateToken, async (req, res) => {
+  const { enrollmentNumber, semester } = req.query;
 
-router.get('/', authenticateToken, (req, res) => {
-  const { year, semester, department } = req.query;
-
-  if (!year || !semester || !department) {
-    return res.status(400).json({ success: false, message: 'Year, semester, and department are required.' });
+  if (!enrollmentNumber || !semester) {
+    return res.status(400).json({ success: false, message: 'Enrollment number and semester are required.' });
   }
 
   try {
-    let subjects = [];
-    const yearNum = parseInt(year);
+    const student = await Student.findOne({ enrollmentNumber });
+    if (!student) {
+      return res.status(404).json({ success: false, message: 'Student not found.' });
+    }
+
     const semesterNum = parseInt(semester);
+    const subjects = getSubjectsForStudent(student, semesterNum);
 
-    if (yearNum === 1) {
-      let group = circuitBranches.includes(department) ? 'Circuit' : (coreBranches.includes(department) ? 'Core' : '');
-      if (group) {
-        subjects = subjectMappings[1]?.[group]?.[semesterNum] || [];
-      }
-    } else {
-      subjects = subjectMappings[yearNum]?.[department]?.[semesterNum] || [];
+    if (!subjects || subjects.length === 0) {
+      return res.status(404).json({ success: false, message: 'No subjects found for this student/semester.' });
     }
 
-    if (subjects.length === 0) {
-      return res.status(404).json({ success: false, message: 'No subjects found for the selected criteria. Please add them manually.' });
-    }
     res.json({ success: true, subjects });
   } catch (error) {
     console.error("Error fetching subjects:", error);
-    res.status(500).json({ success: false, message: 'An error occurred while fetching subjects.' });
+    res.status(500).json({ success: false, message: 'Error fetching subjects' });
   }
 });
 

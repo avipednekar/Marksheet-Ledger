@@ -377,8 +377,8 @@ const Results: React.FC = () => {
         ...nextSlot,
         examType: 'ESE',
         subjects: subjects.reduce((acc, subject) => {
-          if (subject.name) {
-            acc[subject.name] = { ise: Number(subject.ise), mse: Number(subject.mse), ese: Number(subject.ese) };
+          if (subject.courseName) {
+            acc[subject.courseName] = { ise: Number(subject.ise), mse: Number(subject.mse), ese: Number(subject.ese) };
           }
           return acc;
         }, {}),
@@ -415,14 +415,29 @@ const Results: React.FC = () => {
                   <div>
                     <h3 className="font-semibold text-gray-900 mb-2">Subjects for Academic Year {nextSlot.academicYear}</h3>
                     <div className="space-y-3">
-                      {subjects.map((subject, index) => (
-                         <div key={index} className="grid grid-cols-12 gap-2 items-center">
-                            <input type="text" value={subject.name} readOnly className="col-span-12 md:col-span-5 px-3 py-2 border bg-gray-100 border-gray-300 rounded-lg" />
-                            <input type="number" placeholder="ISE (20)" value={subject.ise} onChange={(e) => handleSubjectChange(index, 'ise', e.target.value)} max="20" min="0" className="col-span-4 md:col-span-2 px-3 py-2 border border-gray-300 rounded-lg" required />
-                            <input type="number" placeholder="MSE (30)" value={subject.mse} onChange={(e) => handleSubjectChange(index, 'mse', e.target.value)} max="30" min="0" className="col-span-4 md:col-span-2 px-3 py-2 border border-gray-300 rounded-lg" required />
-                            <input type="number" placeholder="ESE (50)" value={subject.ese} onChange={(e) => handleSubjectChange(index, 'ese', e.target.value)} max="50" min="0" className="col-span-4 md:col-span-2 px-3 py-2 border border-gray-300 rounded-lg" required />
-                         </div>
-                      ))}
+                     {subjects.map((subject, index) => (
+  <div key={index} className="space-y-2 border p-3 rounded">
+    <p className="font-medium">{subject.courseName}</p>
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+      {subject.evaluationScheme.map((scheme: any) => {
+        const key = scheme.name.toLowerCase().replace(/[^a-z]/g, '');
+        return (
+          <input
+            key={scheme.name}
+            type="number"
+            placeholder={`${scheme.name} (${scheme.maxMarks})`}
+            value={subject[key] || ''}
+            onChange={(e) => handleSubjectChange(index, key, e.target.value)}
+            max={scheme.maxMarks}
+            min="0"
+            required
+            className="px-2 py-1 border rounded"
+          />
+        );
+      })}
+    </div>
+  </div>
+))}
                     </div>
                   </div>
                 </>

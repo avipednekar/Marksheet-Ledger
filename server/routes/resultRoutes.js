@@ -3,6 +3,7 @@ import Student from '../models/Student/student.model.js';
 import Result from '../models/Student/result.model.js';
 import { authenticateToken } from '../middleware/auth.js';
 import mongoose from 'mongoose';
+import { getSubjectsForStudent } from '../utils/subjectHelper.js';
 
 const router = express.Router();
 
@@ -16,77 +17,53 @@ const calculateGrade = (totalMarks) => {
   return 'F';
 };
 
+
 router.post('/', authenticateToken, async (req, res) => {
   try {
-    const { studentId, yearOfStudy, academicYear, semester, examType, subjects } = req.body;
+    const { enrollmentNumber, semester, subjects } = req.body;
 
-    const student = await Student.findOne({ enrollmentNumber: studentId });
+    if (!enrollmentNumber || !semester || !subjects) {
+      return res.status(400).json({ success: false, message: "Enrollment number, semester, and subjects are required" });
+    }
+
+    const student = await Student.findOne({ enrollmentNumber });
     if (!student) {
-      return res.status(404).json({ success: false, message: `Student with Enrollment ID '${studentId}' not found.` });
+      return res.status(404).json({ success: false, message: `Student with enrollment '${enrollmentNumber}' not found` });
     }
 
-    // --- New Calculation Logic ---
-    const processedSubjects = new Map();
-    let grandTotalMarks = 0;
-    const failedSubjects = [];
+    const semesterNum = parseInt(semester);
+    const validSubjects = getSubjectsForStudent(student, semesterNum);
 
-    for (const [subjectName, marks] of Object.entries(subjects)) {
-      const ise = Number(marks.ise) || 0;
-      const mse = Number(marks.mse) || 0;
-      const ese = Number(marks.ese) || 0;
+    if (!validSubjects || validSubjects.length === 0) {
+      return res.status(404).json({ success: false, message: "No subjects found for this student/semester" });
+    }
 
-      // Validate marks for each component
-      if (ise < 0 || ise > 20 || mse < 0 || mse > 30 || ese < 0 || ese > 50) {
-        return res.status(400).json({ success: false, message: `Invalid marks for subject ${subjectName}. Please check the maximum marks for each component.` });
+    // Validate provided subjects against student's allowed subjects
+    for (const [subjectName] of Object.entries(subjects)) {
+      const def = validSubjects.find(s => s.courseName === subjectName);
+      if (!def) {
+        return res.status(400).json({ success: false, message: `Invalid subject '${subjectName}' for this student in semester ${semester}` });
       }
+    }
 
-      const subjectTotal = ise + mse + ese;
-
-      // Apply new passing criteria for the subject
-      const subjectStatus = (ese >= 20 && subjectTotal >= 40) ? 'PASS' : 'FAIL';
-      const subjectGrade = calculateGrade(subjectTotal);
-
-      if (subjectStatus === 'FAIL') {
-        failedSubjects.push(subjectName);
-      }
-
-      processedSubjects.set(subjectName, {
-        ise,
-        mse,
-        ese,
-        total: subjectTotal,
-        grade: subjectGrade,
-        status: subjectStatus
+    // Save or update result
+    let result = await Result.findOne({ enrollmentNumber, semester: semesterNum });
+    if (result) {
+      result.subjects = subjects;
+      await result.save();
+      return res.json({ success: true, message: "Result updated successfully", result });
+    } else {
+      result = new Result({
+        enrollmentNumber,
+        semester: semesterNum,
+        subjects
       });
-
-      grandTotalMarks += subjectTotal;
+      await result.save();
+      return res.json({ success: true, message: "Result added successfully", result });
     }
-
-    const subjectCount = processedSubjects.size;
-    const overallStatus = failedSubjects.length > 0 ? 'FAIL' : 'PASS';
-    const percentage = subjectCount > 0 ? (grandTotalMarks / subjectCount) : 0; 
-
-    const newResult = await Result.create({
-      studentId: student._id,
-      yearOfStudy,
-      academicYear,
-      semester,
-      examType: 'ESE', 
-      subjects: processedSubjects,
-      totalMarks: grandTotalMarks,
-      percentage: parseFloat(percentage.toFixed(2)),
-      overallStatus,
-      failedSubjects,
-      makeupRequired: failedSubjects,
-    });
-
-    res.status(201).json({ success: true, message: 'Result added successfully!', result: newResult });
   } catch (error) {
-    if (error.code === 11000) {
-      return res.status(409).json({ success: false, message: 'A result already exists for this student, exam, and semester.' });
-    }
-    console.error('Error adding result:', error);
-    res.status(500).json({ success: false, message: 'Error adding result' });
+    console.error("Error saving result:", error);
+    res.status(500).json({ success: false, message: "Error saving result" });
   }
 });
 
@@ -167,6 +144,30 @@ router.get('/', authenticateToken, async (req, res) => {
   }
 });
 
+router.get('/:enrollmentNumber', authenticateToken, async (req, res) => {
+  try {
+    const results = await Result.find({ enrollmentNumber: req.params.enrollmentNumber });
+    if (!results || results.length === 0) {
+      return res.status(404).json({ success: false, message: "No results found" });
+    }
+    res.json({ success: true, results });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Error fetching results" });
+  }
+});
+
+router.get('/:enrollmentNumber/:semester', authenticateToken, async (req, res) => {
+  try {
+    const { enrollmentNumber, semester } = req.params;
+    const result = await Result.findOne({ enrollmentNumber, semester: parseInt(semester) });
+    if (!result) {
+      return res.status(404).json({ success: false, message: "Result not found" });
+    }
+    res.json({ success: true, result });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Error fetching result" });
+  }
+});
 
 router.get('/:id', authenticateToken, async (req, res) => {
   try {
@@ -282,4 +283,5 @@ router.delete('/:id', authenticateToken, async (req, res) => {
         res.status(500).json({ success: false, message: 'Error deleting result' });
     }
 });
+
 export default router;

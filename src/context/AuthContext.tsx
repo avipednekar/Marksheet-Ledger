@@ -90,7 +90,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const logout = async () => {
-    const currentToken = token; // Use token from state at the time of logout call
+    const currentToken = token; 
     try {
       // --- REFACTORED to use fetch ---
       await fetch(`${API_URL}/auth/logout`, {

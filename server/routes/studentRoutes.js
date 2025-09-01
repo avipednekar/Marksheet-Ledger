@@ -42,6 +42,18 @@ router.get('/', authenticateToken, async (req, res) => {
   }
 });
 
+router.get('/:enrollmentNumber', authenticateToken, async (req, res) => {
+  try {
+    const student = await Student.findOne({ enrollmentNumber: req.params.enrollmentNumber });
+    if (!student) {
+      return res.status(404).json({ success: false, message: 'Student not found' });
+    }
+    res.json({ success: true, student });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Error fetching student' });
+  }
+});
+
 // Add new student
 router.post('/', authenticateToken, async (req, res) => {
   try {
@@ -60,6 +72,82 @@ router.post('/', authenticateToken, async (req, res) => {
     res.status(201).json({ success: true, message: 'Student added successfully', student: newStudent });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Error adding student' });
+  }
+});
+
+router.put('/:enrollmentNumber/mdm', authenticateToken, async (req, res) => {
+  try {
+    const { chosenMDM, forceUpdate = false } = req.body; 
+    // `forceUpdate: true` can be used only by admins if needed
+    
+    const student = await Student.findOne({ enrollmentNumber: req.params.enrollmentNumber });
+
+    if (!student) {
+      return res.status(404).json({ success: false, message: 'Student not found' });
+    }
+
+    // Prevent overwriting if already set, unless admin forces
+    if (student.chosenMDM && !forceUpdate) {
+      return res.status(400).json({ 
+        success: false, 
+        message: `MDM already chosen as '${student.chosenMDM}'. Use 'forceUpdate: true' if admin wants to override.` 
+      });
+    }
+
+    student.chosenMDM = chosenMDM;
+    await student.save();
+
+    res.json({ success: true, message: 'MDM choice updated', student });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Error updating MDM choice' });
+  }
+});
+
+router.put('/:enrollmentNumber/oe', authenticateToken, async (req, res) => {
+  try {
+    const { semester, courseCode } = req.body;
+    const student = await Student.findOne({ enrollmentNumber: req.params.enrollmentNumber });
+
+    if (!student) {
+      return res.status(404).json({ success: false, message: 'Student not found' });
+    }
+
+    // Replace if exists, otherwise push
+    const existingIndex = student.chosenOE.findIndex(oe => oe.semester === semester);
+    if (existingIndex >= 0) {
+      student.chosenOE[existingIndex].courseCode = courseCode;
+    } else {
+      student.chosenOE.push({ semester, courseCode });
+    }
+
+    await student.save();
+    res.json({ success: true, message: 'Open Elective updated', student });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Error updating Open Elective' });
+  }
+});
+
+router.put('/:enrollmentNumber/pe', authenticateToken, async (req, res) => {
+  try {
+    const { semester, courseCode } = req.body;
+    const student = await Student.findOne({ enrollmentNumber: req.params.enrollmentNumber });
+
+    if (!student) {
+      return res.status(404).json({ success: false, message: 'Student not found' });
+    }
+
+    // Replace if exists, otherwise push
+    const existingIndex = student.chosenPE.findIndex(pe => pe.semester === semester);
+    if (existingIndex >= 0) {
+      student.chosenPE[existingIndex].courseCode = courseCode;
+    } else {
+      student.chosenPE.push({ semester, courseCode });
+    }
+
+    await student.save();
+    res.json({ success: true, message: 'Program Elective updated', student });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Error updating Program Elective' });
   }
 });
 
