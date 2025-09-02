@@ -292,11 +292,12 @@ const Results: React.FC = () => {
     </div>
   );
 
-  const AddResultModal: React.FC<{ onClose: () => void; onAdd: (data: any) => void; }> = ({ onClose, onAdd }) => {
+  const AddResultModal: React.FC<{ onClose: () => void; onAdd: (data: any) => Promise<void>; }> = ({ onClose, onAdd }) => {
     const { token } = useAuth();
     const [enrollmentId, setEnrollmentId] = useState('');
     const [status, setStatus] = useState<'idle' | 'loading' | 'loaded' | 'error'>('idle');
     const [errorMessage, setErrorMessage] = useState('');
+    const [isSaving, setIsSaving] = useState(false); // FIX: State to track submission loading
 
     const [studentDetails, setStudentDetails] = useState<any>(null);
     const [nextSlot, setNextSlot] = useState<any>(null);
@@ -340,22 +341,20 @@ const Results: React.FC = () => {
             });
             const data = await response.json();
 
-            // --- FIX: Gracefully handle 404 and other errors when fetching subjects ---
             if (!response.ok || !data.success) {
-              // Throw an error that can be caught and displayed
               throw new Error(data.message || 'Could not load subjects for this semester.');
             }
 
             setSubjects(data.subjects.map((s: any) => ({ ...s, ise: '', mse: '', ese: '' })));
-            setErrorMessage(''); // Clear previous errors
+            setErrorMessage('');
           } catch (err: any) {
             setErrorMessage(err.message);
-            setSubjects([]); // Ensure subjects list is empty on error
+            setSubjects([]);
           }
         };
         fetchSubjects();
       }
-    }, [status, nextSlot, enrollmentId, token]); // Added enrollmentId and token to dependency array
+    }, [status, nextSlot, enrollmentId, token]);
 
     const handleSubjectChange = (index: number, field: string, value: string) => {
       const newSubjects = [...subjects];
@@ -363,10 +362,11 @@ const Results: React.FC = () => {
       setSubjects(newSubjects);
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    // FIX: Make handleSubmit async to await the onAdd operation
+    const handleSubmit = async (e: React.FormEvent) => {
       e.preventDefault();
+      setIsSaving(true); // Start loading
 
-      // --- FIX: Change 'studentId' key to 'enrollmentNumber' to match backend API ---
       const resultData = {
         enrollmentNumber: enrollmentId,
         ...nextSlot,
@@ -374,7 +374,6 @@ const Results: React.FC = () => {
         subjects: subjects.reduce((acc, subject) => {
           if (subject.courseName) {
             const marksPayload: Record<string, number> = {};
-            // Dynamically get marks based on the evaluation scheme
             subject.evaluationScheme.forEach((scheme: { name: string; }) => {
               const key = scheme.name.toLowerCase().replace(/[^a-z]/g, '');
               marksPayload[key] = Number(subject[key]) || 0;
@@ -384,7 +383,15 @@ const Results: React.FC = () => {
           return acc;
         }, {}),
       };
-      onAdd(resultData);
+
+      try {
+        await onAdd(resultData); // Wait for the API call to complete
+      } catch (error) {
+        // Error is handled by the parent, but we ensure the spinner stops
+        console.error("Failed to add result:", error);
+      } finally {
+        setIsSaving(false); // Stop loading
+      }
     };
 
     return (
@@ -403,7 +410,6 @@ const Results: React.FC = () => {
                 </div>
               </div>
 
-              {/* Display any error message for both student search and subject search */}
               {errorMessage && <div className="p-3 bg-red-100 text-red-700 rounded">{errorMessage}</div>}
 
               {status === 'loaded' && studentDetails && nextSlot && (
@@ -415,7 +421,6 @@ const Results: React.FC = () => {
                     <div><span className="font-medium text-sm">Semester:</span><p>{nextSlot.semester}</p></div>
                   </div>
 
-                  {/* Only show subject section if subjects were loaded successfully */}
                   {subjects.length > 0 && (
                     <div>
                       <h3 className="font-semibold text-gray-900 mb-2">Subjects for Academic Year {nextSlot.academicYear}</h3>
@@ -451,8 +456,10 @@ const Results: React.FC = () => {
             </div>
             <div className="p-6 border-t flex justify-end space-x-3">
               <button type="button" onClick={onClose} className="px-4 py-2 bg-white border rounded-lg">Cancel</button>
-              {/* Disable save button if there are no subjects to save */}
-              <button type="submit" disabled={status !== 'loaded' || subjects.length === 0} className="px-4 py-2 bg-blue-600 text-white rounded-lg disabled:opacity-50">Save Result</button>
+              <button type="submit" disabled={status !== 'loaded' || subjects.length === 0 || isSaving} className="px-4 py-2 bg-blue-600 text-white rounded-lg disabled:opacity-50 w-28 text-center">
+                {/* FIX: Conditional rendering for the spinner */}
+                {isSaving ? <LoadingSpinner size="sm" /> : 'Save Result'}
+              </button>
             </div>
           </form>
         </div>
@@ -617,6 +624,7 @@ const Results: React.FC = () => {
       </div>
     );
   };
+
   return (
     <div className="space-y-6">
       {/* Header */}
