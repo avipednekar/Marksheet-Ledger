@@ -6,9 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import LoadingSpinner from '../components/LoadingSpinner';
 
 interface Subject {
-  ise: number;
-  mse: number;
-  ese: number;
+  componentMarks: Record<string, number>;
   total: number;
   grade: string;
   status: string;
@@ -32,16 +30,6 @@ interface Result {
   createdAt: string;
   updatedAt: string;
 }
-
-// interface Student {
-//   id: string;
-//   name: string;
-//   enrollmentNumber: string;
-//   department: string;
-//   yearOfStudy: number;
-//   semester: number;
-//   academicYear: string;
-// }
 
 const Results: React.FC = () => {
   const { token } = useAuth();
@@ -94,7 +82,7 @@ const Results: React.FC = () => {
       setLoading(false);
     }
   };
-  
+
   const handleAddResult = async (newResultData: any) => {
     try {
       const response = await fetch('/api/results', {
@@ -234,7 +222,7 @@ const Results: React.FC = () => {
       </div>
     </div>
   );
-  // --- Updated ViewResultModal ---
+
   const ViewResultModal: React.FC<{ result: Result; onClose: () => void }> = ({ result, onClose }) => (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-screen overflow-y-auto">
@@ -243,51 +231,45 @@ const Results: React.FC = () => {
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 p-1 rounded">✕</button>
         </div>
         <div className="p-6 space-y-6">
-          {/* Student & Exam Info panels remain the same */}
+          {/* Student Info Panel (no change needed here) */}
           <div className="bg-gray-50 rounded-lg p-4">
             <h3 className="font-semibold text-gray-900 mb-3">Student Information</h3>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-              <div>
-                <p className="font-medium text-gray-700">Name</p>
-                <p className="text-gray-900">{result.studentName}</p>
-              </div>
-              <div>
-                <p className="font-medium text-gray-700">Enrollment</p>
-                <p className="text-gray-900">{result.enrollmentNumber}</p>
-              </div>
-              <div>
-                <p className="font-medium text-gray-700">Year & Semester</p>
-                <p className="text-gray-900">Year {result.yearOfStudy}, Sem {result.semester}</p>
-              </div>
-              <div>
-                <p className="font-medium text-gray-700">Academic Year</p>
-                <p className="text-gray-900">{result.academicYear}</p>
-              </div>
+              <div><p className="font-medium text-gray-700">Name</p><p className="text-gray-900">{result.studentName}</p></div>
+              <div><p className="font-medium text-gray-700">Enrollment</p><p className="text-gray-900">{result.enrollmentNumber}</p></div>
+              <div><p className="font-medium text-gray-700">Year & Semester</p><p className="text-gray-900">Year {result.yearOfStudy}, Sem {result.semester}</p></div>
+              <div><p className="font-medium text-gray-700">Academic Year</p><p className="text-gray-900">{result.academicYear}</p></div>
             </div>
           </div>
-           {/* Subject-wise Marks - Updated Table Structure */}
+
+          {/* FIX: Dynamic Subject Performance Table */}
           <div>
             <h3 className="font-semibold text-gray-900 mb-3">Subject-wise Performance</h3>
             <div className="overflow-x-auto">
               <table className="min-w-full bg-white border border-gray-200 rounded-lg">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Subject</th>
-                    <th className="px-4 py-3 text-center text-sm font-medium text-gray-700">ISE (20)</th>
-                    <th className="px-4 py-3 text-center text-sm font-medium text-gray-700">MSE (30)</th>
-                    <th className="px-4 py-3 text-center text-sm font-medium text-gray-700">ESE (50)</th>
-                    <th className="px-4 py-3 text-center text-sm font-medium text-gray-700">Total (100)</th>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 w-2/5">Subject</th>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 w-2/5">Component Marks</th>
+                    <th className="px-4 py-3 text-center text-sm font-medium text-gray-700">Total</th>
                     <th className="px-4 py-3 text-center text-sm font-medium text-gray-700">Grade</th>
                     <th className="px-4 py-3 text-center text-sm font-medium text-gray-700">Status</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
-                  {Object.entries(result.subjects).map(([subject, data]) => (
-                    <tr key={subject} className={data.status === 'FAIL' ? 'bg-red-50' : ''}>
-                      <td className="px-4 py-3 text-sm font-medium text-gray-900">{subject}</td>
-                      <td className="px-4 py-3 text-center text-sm text-gray-900">{data.ise}</td>
-                      <td className="px-4 py-3 text-center text-sm text-gray-900">{data.mse}</td>
-                      <td className="px-4 py-3 text-center text-sm text-gray-900 font-bold">{data.ese}</td>
+                  {Object.entries(result.subjects).map(([subjectName, data]) => (
+                    <tr key={subjectName} className={data.status === 'FAIL' ? 'bg-red-50' : ''}>
+                      <td className="px-4 py-3 text-sm font-medium text-gray-900">{subjectName}</td>
+                      <td className="px-4 py-3">
+                        <div className="flex flex-wrap gap-2">
+                          {/* Dynamically list all component marks */}
+                          {Object.entries(data.componentMarks).map(([compName, compMark]) => (
+                            <span key={compName} className="text-xs px-2 py-1 bg-gray-100 text-gray-800 rounded">
+                              {compName}: <span className="font-semibold">{compMark}</span>
+                            </span>
+                          ))}
+                        </div>
+                      </td>
                       <td className="px-4 py-3 text-center text-sm text-gray-900 font-bold">{data.total}</td>
                       <td className="px-4 py-3 text-center">
                         <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded ${getGradeColor(data.grade)}`}>{data.grade}</span>
@@ -303,14 +285,14 @@ const Results: React.FC = () => {
           </div>
         </div>
         <div className="p-6 border-t border-gray-200 flex justify-end space-x-3">
-            <button onClick={onClose} className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">Close</button>
-            <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center"><Download className="h-4 w-4 mr-2" />Export PDF</button>
+          <button onClick={onClose} className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">Close</button>
+          <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center"><Download className="h-4 w-4 mr-2" />Export PDF</button>
         </div>
       </div>
     </div>
   );
 
-   const AddResultModal: React.FC<{ onClose: () => void; onAdd: (data: any) => void; }> = ({ onClose, onAdd }) => {
+  const AddResultModal: React.FC<{ onClose: () => void; onAdd: (data: any) => void; }> = ({ onClose, onAdd }) => {
     const { token } = useAuth();
     const [enrollmentId, setEnrollmentId] = useState('');
     const [status, setStatus] = useState<'idle' | 'loading' | 'loaded' | 'error'>('idle');
@@ -347,22 +329,33 @@ const Results: React.FC = () => {
     useEffect(() => {
       if (status === 'loaded' && nextSlot) {
         const fetchSubjects = async () => {
-          const params = new URLSearchParams({
-            year: nextSlot.yearOfStudy,
-            semester: nextSlot.semester,
-            department: studentDetails.department,
-          });
-          const response = await fetch(`/api/subjects?${params.toString()}`, {
-            headers: { 'Authorization': `Bearer ${token}` }
-          });
-          const data = await response.json();
-          if (data.success) {
+          try {
+            const params = new URLSearchParams({
+              enrollmentNumber: enrollmentId,
+              semester: nextSlot.semester.toString(),
+              year: nextSlot.yearOfStudy
+            });
+            const response = await fetch(`/api/subjects?${params}`, {
+              headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await response.json();
+
+            // --- FIX: Gracefully handle 404 and other errors when fetching subjects ---
+            if (!response.ok || !data.success) {
+              // Throw an error that can be caught and displayed
+              throw new Error(data.message || 'Could not load subjects for this semester.');
+            }
+
             setSubjects(data.subjects.map((s: any) => ({ ...s, ise: '', mse: '', ese: '' })));
+            setErrorMessage(''); // Clear previous errors
+          } catch (err: any) {
+            setErrorMessage(err.message);
+            setSubjects([]); // Ensure subjects list is empty on error
           }
         };
         fetchSubjects();
       }
-    }, [status, nextSlot, studentDetails, token]);
+    }, [status, nextSlot, enrollmentId, token]); // Added enrollmentId and token to dependency array
 
     const handleSubjectChange = (index: number, field: string, value: string) => {
       const newSubjects = [...subjects];
@@ -372,13 +365,21 @@ const Results: React.FC = () => {
 
     const handleSubmit = (e: React.FormEvent) => {
       e.preventDefault();
+
+      // --- FIX: Change 'studentId' key to 'enrollmentNumber' to match backend API ---
       const resultData = {
-        studentId: enrollmentId,
+        enrollmentNumber: enrollmentId,
         ...nextSlot,
         examType: 'ESE',
         subjects: subjects.reduce((acc, subject) => {
           if (subject.courseName) {
-            acc[subject.courseName] = { ise: Number(subject.ise), mse: Number(subject.mse), ese: Number(subject.ese) };
+            const marksPayload: Record<string, number> = {};
+            // Dynamically get marks based on the evaluation scheme
+            subject.evaluationScheme.forEach((scheme: { name: string; }) => {
+              const key = scheme.name.toLowerCase().replace(/[^a-z]/g, '');
+              marksPayload[key] = Number(subject[key]) || 0;
+            });
+            acc[subject.courseName] = marksPayload;
           }
           return acc;
         }, {}),
@@ -397,13 +398,14 @@ const Results: React.FC = () => {
                 <div className="flex space-x-2">
                   <input type="text" value={enrollmentId} onChange={(e) => setEnrollmentId(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="e.g., 2324001241" />
                   <button type="button" onClick={handleSearch} disabled={status === 'loading'} className="px-4 py-2 bg-blue-600 text-white rounded-lg disabled:opacity-50">
-                    {status === 'loading' ? <LoadingSpinner size="sm"/> : 'Find'}
+                    {status === 'loading' ? <LoadingSpinner size="sm" /> : 'Find'}
                   </button>
                 </div>
               </div>
-              
-              {status === 'error' && <div className="p-3 bg-red-100 text-red-700 rounded">{errorMessage}</div>}
-              
+
+              {/* Display any error message for both student search and subject search */}
+              {errorMessage && <div className="p-3 bg-red-100 text-red-700 rounded">{errorMessage}</div>}
+
               {status === 'loaded' && studentDetails && nextSlot && (
                 <>
                   <div className="p-4 bg-gray-50 rounded-lg grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -412,40 +414,45 @@ const Results: React.FC = () => {
                     <div><span className="font-medium text-sm">Year:</span><p>{nextSlot.yearOfStudy}</p></div>
                     <div><span className="font-medium text-sm">Semester:</span><p>{nextSlot.semester}</p></div>
                   </div>
-                  <div>
-                    <h3 className="font-semibold text-gray-900 mb-2">Subjects for Academic Year {nextSlot.academicYear}</h3>
-                    <div className="space-y-3">
-                     {subjects.map((subject, index) => (
-  <div key={index} className="space-y-2 border p-3 rounded">
-    <p className="font-medium">{subject.courseName}</p>
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-      {subject.evaluationScheme.map((scheme: any) => {
-        const key = scheme.name.toLowerCase().replace(/[^a-z]/g, '');
-        return (
-          <input
-            key={scheme.name}
-            type="number"
-            placeholder={`${scheme.name} (${scheme.maxMarks})`}
-            value={subject[key] || ''}
-            onChange={(e) => handleSubjectChange(index, key, e.target.value)}
-            max={scheme.maxMarks}
-            min="0"
-            required
-            className="px-2 py-1 border rounded"
-          />
-        );
-      })}
-    </div>
-  </div>
-))}
+
+                  {/* Only show subject section if subjects were loaded successfully */}
+                  {subjects.length > 0 && (
+                    <div>
+                      <h3 className="font-semibold text-gray-900 mb-2">Subjects for Academic Year {nextSlot.academicYear}</h3>
+                      <div className="space-y-3">
+                        {subjects.map((subject, index) => (
+                          <div key={index} className="space-y-2 border p-3 rounded">
+                            <p className="font-medium">{subject.courseName}</p>
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                              {subject.evaluationScheme.map((scheme: any) => {
+                                const key = scheme.name.toLowerCase().replace(/[^a-z]/g, '');
+                                return (
+                                  <input
+                                    key={scheme.name}
+                                    type="number"
+                                    placeholder={`${scheme.name} (${scheme.maxMarks})`}
+                                    value={subject[key] || ''}
+                                    onChange={(e) => handleSubjectChange(index, key, e.target.value)}
+                                    max={scheme.maxMarks}
+                                    min="0"
+                                    required
+                                    className="px-2 py-1 border rounded"
+                                  />
+                                );
+                              })}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </>
               )}
             </div>
             <div className="p-6 border-t flex justify-end space-x-3">
               <button type="button" onClick={onClose} className="px-4 py-2 bg-white border rounded-lg">Cancel</button>
-              <button type="submit" disabled={status !== 'loaded'} className="px-4 py-2 bg-blue-600 text-white rounded-lg disabled:opacity-50">Save Result</button>
+              {/* Disable save button if there are no subjects to save */}
+              <button type="submit" disabled={status !== 'loaded' || subjects.length === 0} className="px-4 py-2 bg-blue-600 text-white rounded-lg disabled:opacity-50">Save Result</button>
             </div>
           </form>
         </div>
@@ -454,24 +461,63 @@ const Results: React.FC = () => {
   };
 
   const EditResultModal: React.FC<{ result: Result; onClose: () => void; onSave: () => void; }> = ({ result, onClose, onSave }) => {
+    const { token } = useAuth();
     const [subjects, setSubjects] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [formError, setFormError] = useState('');
 
     useEffect(() => {
-      // Convert the result's subjects object into an array for easier mapping in the form
-      const subjectsArray = Object.entries(result.subjects).map(([name, data]) => ({
-        name,
-        ise: data.ise,
-        mse: data.mse,
-        ese: data.ese
-      }));
-      setSubjects(subjectsArray);
-    }, [result]);
+      const fetchSubjectConfigsAndPopulateMarks = async () => {
+        setLoading(true);
+        setFormError('');
+        try {
+          // Step 1: Fetch the subject configuration (with evaluation schemes)
+          const params = new URLSearchParams({
+            enrollmentNumber: result.enrollmentNumber,
+            semester: result.semester.toString(),
+            year: result.yearOfStudy.toString()
+          });
+          const response = await fetch(`/api/subjects?${params}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          const data = await response.json();
+          if (!response.ok || !data.success) {
+            throw new Error(data.message || 'Could not load subject configurations to edit.');
+          }
 
-    const handleMarkChange = (index: number, field: 'ise' | 'mse' | 'ese', value: string) => {
+          // Step 2: Map configs and populate with existing marks from the result object
+          const populatedSubjects = data.subjects.map((config: any) => {
+            const existingSubjectData = result.subjects[config.courseName];
+            const marks: Record<string, number | ''> = {};
+
+            config.evaluationScheme.forEach((scheme: any) => {
+              const key = scheme.name.toLowerCase().replace(/[^a-z]/g, '');
+              // Use existing mark if available, otherwise default to empty string
+              marks[key] = existingSubjectData?.componentMarks[scheme.name] ?? '';
+            });
+
+            return {
+              ...config,
+              ...marks
+            };
+          });
+
+          setSubjects(populatedSubjects);
+
+        } catch (err: any) {
+          setFormError(err.message);
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      fetchSubjectConfigsAndPopulateMarks();
+    }, [result, token]);
+
+    const handleMarkChange = (subjectIndex: number, key: string, value: string) => {
       const newSubjects = [...subjects];
-      newSubjects[index][field] = value;
+      newSubjects[subjectIndex][key] = value;
       setSubjects(newSubjects);
     };
 
@@ -480,13 +526,14 @@ const Results: React.FC = () => {
       setSaving(true);
       setFormError('');
 
-      // Convert the subjects array back into the object format the backend expects
+      // Dynamically build the payload, just like in the AddResultModal
       const subjectsPayload = subjects.reduce((acc, subject) => {
-        acc[subject.name] = {
-          ise: Number(subject.ise),
-          mse: Number(subject.mse),
-          ese: Number(subject.ese)
-        };
+        const marks: Record<string, number> = {};
+        subject.evaluationScheme.forEach((scheme: any) => {
+          const key = scheme.name.toLowerCase().replace(/[^a-z]/g, '');
+          marks[key] = Number(subject[key]) || 0;
+        });
+        acc[subject.courseName] = marks;
         return acc;
       }, {});
 
@@ -526,24 +573,42 @@ const Results: React.FC = () => {
               </div>
 
               {formError && <div className="p-3 bg-red-100 text-red-700 rounded">{formError}</div>}
-              
-              <div>
-                <h3 className="font-semibold text-gray-900 mb-2">Update Subject Marks</h3>
-                <div className="space-y-3">
-                  {subjects.map((subject, index) => (
-                    <div key={subject.name} className="grid grid-cols-12 gap-2 items-center">
-                      <input type="text" value={subject.name} readOnly className="col-span-12 md:col-span-6 px-3 py-2 border bg-gray-100 border-gray-300 rounded-lg" />
-                      <input type="number" placeholder="ISE" value={subject.ise} onChange={(e) => handleMarkChange(index, 'ise', e.target.value)} max="20" min="0" className="col-span-4 md:col-span-2 px-3 py-2 border border-gray-300 rounded-lg" required />
-                      <input type="number" placeholder="MSE" value={subject.mse} onChange={(e) => handleMarkChange(index, 'mse', e.target.value)} max="30" min="0" className="col-span-4 md:col-span-2 px-3 py-2 border border-gray-300 rounded-lg" required />
-                      <input type="number" placeholder="ESE" value={subject.ese} onChange={(e) => handleMarkChange(index, 'ese', e.target.value)} max="50" min="0" className="col-span-4 md:col-span-2 px-3 py-2 border border-gray-300 rounded-lg" required />
-                    </div>
-                  ))}
+
+              {loading ? <div className="text-center p-8"><LoadingSpinner /></div> : (
+                <div>
+                  <h3 className="font-semibold text-gray-900 mb-2">Update Subject Marks</h3>
+                  <div className="space-y-3">
+                    {subjects.map((subject, index) => (
+                      <div key={subject.courseCode} className="space-y-2 border p-3 rounded">
+                        <p className="font-medium">{subject.courseName}</p>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                          {/* Dynamically create inputs based on the scheme */}
+                          {subject.evaluationScheme.map((scheme: any) => {
+                            const key = scheme.name.toLowerCase().replace(/[^a-z]/g, '');
+                            return (
+                              <input
+                                key={scheme.name}
+                                type="number"
+                                placeholder={`${scheme.name} (${scheme.maxMarks})`}
+                                value={subject[key]}
+                                onChange={(e) => handleMarkChange(index, key, e.target.value)}
+                                max={scheme.maxMarks}
+                                min="0"
+                                required
+                                className="px-2 py-1 border rounded"
+                              />
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
             <div className="p-6 border-t flex justify-end space-x-3">
               <button type="button" onClick={onClose} className="px-4 py-2 bg-white border rounded-lg">Cancel</button>
-              <button type="submit" disabled={saving} className="px-4 py-2 bg-blue-600 text-white rounded-lg disabled:opacity-50">
+              <button type="submit" disabled={loading || saving} className="px-4 py-2 bg-blue-600 text-white rounded-lg disabled:opacity-50">
                 {saving ? <LoadingSpinner size="sm" /> : 'Save Changes'}
               </button>
             </div>
@@ -552,7 +617,6 @@ const Results: React.FC = () => {
       </div>
     );
   };
-  // Main component return remains the same
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -569,7 +633,7 @@ const Results: React.FC = () => {
           Add Result
         </button>
       </div>
-    {/* Filters */}
+      {/* Filters */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
         <div className="flex items-center space-x-2 mb-4">
           <Filter className="h-5 w-5 text-gray-400" />
@@ -718,7 +782,7 @@ const Results: React.FC = () => {
           )}
         </div>
       </div>
-       {/* View Result Modal */}
+      {/* View Result Modal */}
       {viewingResult && (
         <ViewResultModal
           result={viewingResult}

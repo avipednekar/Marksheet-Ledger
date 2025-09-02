@@ -1,29 +1,16 @@
 import mongoose from 'mongoose';
 
 const subjectSchema = new mongoose.Schema({
-  ise: {
-    type: Number,
-    required: true,
-    min: 0,
-    max: 20,
-  },
-  mse: {
-    type: Number,
-    required: true,
-    min: 0,
-    max: 30,
-  },
-  ese: {
-    type: Number,
-    required: true,
-    min: 0,
-    max: 50,
+  componentMarks: {
+    type: Map,
+    of: Number,
+    default: {}
   },
   total: {
     type: Number,
     required: true,
     min: 0,
-    max: 100,
+    max: 100, // Total marks are consistently out of 100
   },
   grade: {
     type: String,
@@ -89,7 +76,6 @@ const resultSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Ensure a student has only one result per exam type, semester, and academic year
 resultSchema.index({ studentId: 1, academicYear: 1, semester: 1, examType: 1 }, { unique: true });
 
 const Result = mongoose.model('Result', resultSchema);

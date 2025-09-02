@@ -17,53 +17,126 @@ const calculateGrade = (totalMarks) => {
   return 'F';
 };
 
+const processResultData = (student, yearOfStudy, semester, subjects) => {
+  const processedSubjects = new Map();
+  let grandTotalMarks = 0;
+  let grandTotalMaxMarks = 0; 
+  const failedSubjects = [];
+
+  const subjectsData = getSubjectsForStudent(student, semester, yearOfStudy);
+
+  if (!subjectsData || subjectsData.length === 0) {
+    throw new Error(`Subject data not found for student's year and semester.`);
+  }
+
+  const courseMap = new Map(subjectsData.map(course => [course.courseName, course]));
+
+  for (const [subjectName, marks] of Object.entries(subjects)) {
+    const subjectConfig = courseMap.get(subjectName);
+    
+    if (!subjectConfig) {
+      console.warn(`Warning: Configuration for subject '${subjectName}' not found. Skipping validation.`);
+      continue;
+    }
+
+    let totalMarks = 0;
+    let subjectMaxMarks = 0; 
+    let isPassing = true;
+    const componentMarks = new Map();
+
+    subjectConfig.evaluationScheme.forEach(scheme => {
+      const key = scheme.name.toLowerCase().replace(/[^a-z]/g, '');
+      const studentMark = Number(marks[key]) || 0;
+      
+      subjectMaxMarks += scheme.maxMarks; 
+
+      if (studentMark < 0 || studentMark > scheme.maxMarks) {
+        throw new Error(`Invalid marks for ${scheme.name} in subject ${subjectName}. Marks must be between 0 and ${scheme.maxMarks}.`);
+      }
+      
+      if (scheme.minPassingMarks && studentMark < scheme.minPassingMarks) {
+        isPassing = false;
+      }
+      
+      totalMarks += studentMark;
+      componentMarks.set(scheme.name, studentMark);
+    });
+
+    if (totalMarks < subjectConfig.minForPassing) {
+        isPassing = false;
+    }
+    
+    const subjectStatus = isPassing ? 'PASS' : 'FAIL';
+    const normalizedMarksForGrade = (totalMarks / subjectMaxMarks) * 100;
+    const subjectGrade = calculateGrade(normalizedMarksForGrade);
+
+    if (subjectStatus === 'FAIL') {
+      failedSubjects.push(subjectName);
+    }
+
+    processedSubjects.set(subjectName, {
+      componentMarks,
+      total: totalMarks,
+      grade: subjectGrade,
+      status: subjectStatus
+    });
+    
+    grandTotalMarks += totalMarks;
+    grandTotalMaxMarks += subjectMaxMarks; 
+  }
+
+  const overallStatus = failedSubjects.length > 0 ? 'FAIL' : 'PASS';
+  
+  const percentage = grandTotalMaxMarks > 0 ? (grandTotalMarks / grandTotalMaxMarks) * 100 : 0;
+
+  return {
+    subjects: Object.fromEntries(processedSubjects),
+    totalMarks: grandTotalMarks,
+    percentage: parseFloat(percentage.toFixed(2)),
+    overallStatus,
+    failedSubjects,
+    makeupRequired: failedSubjects
+  };
+};
 
 router.post('/', authenticateToken, async (req, res) => {
   try {
-    const { enrollmentNumber, semester, subjects } = req.body;
+    const { enrollmentNumber, semester, subjects, yearOfStudy, academicYear, examType } = req.body;
 
-    if (!enrollmentNumber || !semester || !subjects) {
-      return res.status(400).json({ success: false, message: "Enrollment number, semester, and subjects are required" });
+    if (!enrollmentNumber || !semester || !subjects || !yearOfStudy || !academicYear || !examType) {
+      return res.status(400).json({ success: false, message: "Missing required fields for creating a result." });
     }
 
     const student = await Student.findOne({ enrollmentNumber });
     if (!student) {
       return res.status(404).json({ success: false, message: `Student with enrollment '${enrollmentNumber}' not found` });
     }
-
-    const semesterNum = parseInt(semester);
-    const validSubjects = getSubjectsForStudent(student, semesterNum);
-
-    if (!validSubjects || validSubjects.length === 0) {
-      return res.status(404).json({ success: false, message: "No subjects found for this student/semester" });
+    
+    // Check if a result already exists to prevent duplicates
+    const existingResult = await Result.findOne({ studentId: student._id, semester });
+    if (existingResult) {
+        return res.status(409).json({ success: false, message: `Result for semester ${semester} already exists for this student.` });
     }
 
-    // Validate provided subjects against student's allowed subjects
-    for (const [subjectName] of Object.entries(subjects)) {
-      const def = validSubjects.find(s => s.courseName === subjectName);
-      if (!def) {
-        return res.status(400).json({ success: false, message: `Invalid subject '${subjectName}' for this student in semester ${semester}` });
-      }
-    }
+    // Use the centralized processing function with the student object
+    const calculatedData = processResultData(student, yearOfStudy, semester, subjects);
 
-    // Save or update result
-    let result = await Result.findOne({ enrollmentNumber, semester: semesterNum });
-    if (result) {
-      result.subjects = subjects;
-      await result.save();
-      return res.json({ success: true, message: "Result updated successfully", result });
-    } else {
-      result = new Result({
-        enrollmentNumber,
-        semester: semesterNum,
-        subjects
-      });
-      await result.save();
-      return res.json({ success: true, message: "Result added successfully", result });
-    }
+    const result = new Result({
+      studentId: student._id,
+      enrollmentNumber,
+      semester,
+      yearOfStudy,
+      academicYear,
+      examType,
+      ...calculatedData
+    });
+    
+    await result.save();
+    res.status(201).json({ success: true, message: "Result added successfully", result });
+
   } catch (error) {
     console.error("Error saving result:", error);
-    res.status(500).json({ success: false, message: "Error saving result" });
+    res.status(500).json({ success: false, message: error.message || "Error saving result" });
   }
 });
 
@@ -105,13 +178,10 @@ router.get('/', authenticateToken, async (req, res) => {
     pipeline.push({ $skip: (parseInt(page) - 1) * parseInt(limit) });
     pipeline.push({ $limit: parseInt(limit) });
 
-    // --- KEY CHANGE: Add a $project stage to reshape the output ---
     pipeline.push({
       $project: {
-        _id: 0, // Exclude the original _id
-        id: '$_id', // Create a new 'id' field from the value of '_id'
-        
-        // Explicitly include all other fields you want to send to the frontend
+        _id: 0,
+        id: '$_id',
         studentName: '$studentInfo.name',
         enrollmentNumber: '$studentInfo.enrollmentNumber',
         yearOfStudy: 1,
@@ -169,14 +239,14 @@ router.get('/:enrollmentNumber/:semester', authenticateToken, async (req, res) =
   }
 });
 
-router.get('/:id', authenticateToken, async (req, res) => {
+router.get('/details/:id', authenticateToken, async (req, res) => {
   try {
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
         return res.status(400).json({ success: false, message: 'Invalid result ID format' });
     }
 
     const result = await Result.findById(req.params.id)
-      .populate('studentId', 'name enrollmentNumber'); // Populate student info
+      .populate('studentId', 'name enrollmentNumber');
 
     if (!result) {
       return res.status(404).json({ success: false, message: 'Result not found' });
@@ -204,48 +274,18 @@ router.put('/:id', authenticateToken, async (req, res) => {
             return res.status(400).json({ success: false, message: 'Subjects data is required for an update.' });
         }
 
-        const processedSubjects = new Map();
-        let grandTotalMarks = 0;
-        const failedSubjects = [];
-
-        for (const [subjectName, marks] of Object.entries(subjects)) {
-            const ise = Number(marks.ise) || 0;
-            const mse = Number(marks.mse) || 0;
-            const ese = Number(marks.ese) || 0;
-
-            if (ise < 0 || ise > 20 || mse < 0 || mse > 30 || ese < 0 || ese > 50) {
-                return res.status(400).json({ success: false, message: `Invalid marks for subject ${subjectName}.` });
-            }
-
-            const subjectTotal = ise + mse + ese;
-            const subjectStatus = (ese >= 20 && subjectTotal >= 40) ? 'PASS' : 'FAIL';
-            const subjectGrade = calculateGrade(subjectTotal);
-
-            if (subjectStatus === 'FAIL') {
-                failedSubjects.push(subjectName);
-            }
-
-            processedSubjects.set(subjectName, {
-                ise, mse, ese,
-                total: subjectTotal,
-                grade: subjectGrade,
-                status: subjectStatus
-            });
-            grandTotalMarks += subjectTotal;
+        const resultToUpdate = await Result.findById(id);
+        if (!resultToUpdate) {
+             return res.status(404).json({ success: false, message: 'Result not found' });
         }
         
-        const subjectCount = processedSubjects.size;
-        const overallStatus = failedSubjects.length > 0 ? 'FAIL' : 'PASS';
-        const percentage = subjectCount > 0 ? (grandTotalMarks / subjectCount) : 0;
-        
-        const updateData = {
-            subjects: processedSubjects,
-            totalMarks: grandTotalMarks,
-            percentage: parseFloat(percentage.toFixed(2)),
-            overallStatus,
-            failedSubjects,
-            makeupRequired: failedSubjects
-        };
+        const student = await Student.findById(resultToUpdate.studentId);
+        if (!student) {
+            return res.status(404).json({ success: false, message: 'Student not found for the given result.' });
+        }
+
+        // Use the centralized processing function with the student object
+        const updateData = processResultData(student, resultToUpdate.yearOfStudy, resultToUpdate.semester, subjects);
 
         const updatedResult = await Result.findByIdAndUpdate(id, updateData, {
             new: true,
@@ -265,7 +305,7 @@ router.put('/:id', authenticateToken, async (req, res) => {
         res.json({ success: true, message: 'Result updated successfully', result: formattedResult });
     } catch (error) {
         console.error('Error updating result:', error);
-        res.status(500).json({ success: false, message: 'Error updating result' });
+        res.status(500).json({ success: false, message: error.message || 'Error updating result' });
     }
 });
 

@@ -2,11 +2,12 @@
 import express from 'express';
 import { getSubjectsForStudent } from '../utils/subjectHelper.js';
 import { authenticateToken } from '../middleware/auth.js';
+import Student from '../models/Student/student.model.js';
 
 const router = express.Router();
 
 router.get('/', authenticateToken, async (req, res) => {
-  const { enrollmentNumber, semester } = req.query;
+  const { enrollmentNumber, semester, year } = req.query;
 
   if (!enrollmentNumber || !semester) {
     return res.status(400).json({ success: false, message: 'Enrollment number and semester are required.' });
@@ -19,7 +20,7 @@ router.get('/', authenticateToken, async (req, res) => {
     }
 
     const semesterNum = parseInt(semester);
-    const subjects = getSubjectsForStudent(student, semesterNum);
+    const subjects = getSubjectsForStudent(student, semesterNum,year);
 
     if (!subjects || subjects.length === 0) {
       return res.status(404).json({ success: false, message: 'No subjects found for this student/semester.' });

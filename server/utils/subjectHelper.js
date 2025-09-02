@@ -1,33 +1,50 @@
 import { subjectMappings } from '../data/subjects.js';
 
-export function getSubjectsForStudent(student, semester) {
-  let subjects = [];
-
-  // 1. Core department subjects
-  if (subjectMappings[student.yearOfStudy]?.[student.department]?.[semester]) {
-    subjects.push(...subjectMappings[student.yearOfStudy][student.department][semester]);
+export function getSubjectsForStudent(student, semester,year) {
+  if (!student || !semester) {
+    return [];
   }
 
-  // 2. MDM subjects (only if chosen & from sem 3 onwards)
-  if (student.chosenMDM && subjectMappings.MDM?.[semester]?.[student.chosenMDM]) {
-    subjects.push(...subjectMappings.MDM[semester][student.chosenMDM]);
+  let group;
+  if(student.department==='Computer Science'||'Electronics'){
+    group='Circuit'
+  } else{
+    group='Core'
   }
 
-  // 3. Open Electives
-  const oeChoice = student.chosenOE?.find(oe => oe.semester === semester);
-  if (oeChoice) {
-    const oeList = subjectMappings.OE?.[semester] || [];
-    const chosenOE = oeList.find(oe => oe.courseCode === oeChoice.courseCode);
-    if (chosenOE) subjects.push(chosenOE);
+  const departmentOrGroupKey = year == 1 ? group : student.department;
+
+  const baseCurriculum = subjectMappings[year]?.[departmentOrGroupKey]?.[semester];
+
+  // If no base curriculum is found for the student's year/dept/sem combination, return empty.
+  if (!baseCurriculum) {
+    console.warn(`No curriculum found for year: ${year}, key: ${departmentOrGroupKey}, semester: ${semester}`);
+    return [];
+  }
+  
+  const finalSubjects = [];
+
+  // Find the student's choices for the current semester upfront.
+  const chosenPE = student.chosenPE?.find(pe => pe.semester === semester);
+  const chosenOE = student.chosenOE?.find(oe => oe.semester === semester);
+  const chosenMDM = student.chosenMDM?.find(mdm => mdm.semester === semester);
+
+  for (const subject of baseCurriculum) {
+    switch (subject.courseType) {
+      case 'Program Elective':
+        if (chosenPE) finalSubjects.push(chosenPE);
+        break;
+      case 'Open Elective':
+        if (chosenOE) finalSubjects.push(chosenOE);
+        break;
+      case 'MDM':
+        if (chosenMDM) finalSubjects.push(chosenMDM);
+        break;
+      default:
+        finalSubjects.push(subject);
+        break;
+    }
   }
 
-  // 4. Program Electives
-  const peChoice = student.chosenPE?.find(pe => pe.semester === semester);
-  if (peChoice) {
-    const peList = subjectMappings.PE?.[semester] || [];
-    const chosenPE = peList.find(pe => pe.courseCode === peChoice.courseCode);
-    if (chosenPE) subjects.push(chosenPE);
-  }
-
-  return subjects;
+  return finalSubjects;
 }
