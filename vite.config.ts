@@ -10,7 +10,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'https://marksheet-ledger.netlify.app/',
+        target: 'http://localhost:5000',
         changeOrigin: true,
       },
     },
