@@ -23,7 +23,10 @@ const PORT = process.env.PORT || 5000;
 
 app.use(helmet());
 app.use(cors({
-  origin: process.env.NODE_ENV === 'dev' ? 'your-frontend-domain.com' : 'http://localhost:5173',
+  origin: [
+    "http://localhost:5173", 
+    "https://marksheet-ledger.netlify.app"
+  ],
   credentials: true
 }));
 
