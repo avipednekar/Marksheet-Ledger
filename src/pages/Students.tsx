@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import LoadingSpinner from '../components/LoadingSpinner';
 
 interface Student {
-  id: string;
+  _id: string;
   name: string;
   email: string;
   enrollmentNumber: string;
@@ -78,7 +78,7 @@ const Students: React.FC = () => {
       });
       const data = await response.json();
       if (data.success) {
-        setStudents(students.filter(s => s.id !== studentId));
+        setStudents(students.filter(s => s._id !== studentId));
       } else {
         alert(`Error: ${data.message}`);
       }
@@ -101,7 +101,7 @@ const Students: React.FC = () => {
         </div>
         <div className="flex items-center space-x-2">
           <button onClick={() => setEditingStudent(student)} className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg"><Edit3 className="h-4 w-4" /></button>
-          <button onClick={() => handleDeleteStudent(student.id)} className="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg"><Trash2 className="h-4 w-4" /></button>
+          <button onClick={() => handleDeleteStudent(student._id)} className="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg"><Trash2 className="h-4 w-4" /></button>
         </div>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
@@ -139,7 +139,7 @@ const Students: React.FC = () => {
       setSaving(true);
       setFormError('');
       try {
-        const url = student ? `/api/students/${student.id}` : '/api/students';
+        const url = student ? `/api/students/${student._id}` : '/api/students';
         const method = student ? 'PUT' : 'POST';
         const response = await fetch(url, {
           method,
@@ -295,7 +295,7 @@ const Students: React.FC = () => {
             <div className="flex items-center justify-center h-32"><LoadingSpinner size="lg" /></div>
           ) : students.length > 0 ? (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {students.map((student) => (<StudentCard key={student.id} student={student} />))}
+              {students.map((student) => (<StudentCard key={student._id} student={student} />))}
             </div>
           ) : (
             <div className="text-center py-12">

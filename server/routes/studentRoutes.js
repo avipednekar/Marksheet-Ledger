@@ -3,8 +3,51 @@ import Student from '../models/Student/student.model.js';
 import Result from '../models/Student/result.model.js';
 import MakeupHistory from '../models/Student/makeup.model.js';
 import { authenticateToken } from '../middleware/auth.js';
+import { faker } from '@faker-js/faker';
 
 const router = express.Router();
+
+function generateEnrollmentNumber(admissionYear) {
+  const randomDigits = faker.number.int({ min: 1, max: 1300 }); 
+  const prefix = admissionYear.replace("-", "").slice(2);
+  const padded = randomDigits.toString().padStart(4, "0");
+  return prefix + "00" + padded; 
+}
+
+function generateAdmissionYear() {
+  const startYear = faker.number.int({ min: 2020, max: 2025 });
+  const endYear = startYear + 1;
+  return `${startYear}-${endYear.toString().slice(-2)}`;
+}
+
+router.get("/add-multiple-dummy", async (req, res) => {
+  try {
+    let students = [];
+
+    for (let i = 1; i <= 10; i++) {
+      const admissionYear = generateAdmissionYear();
+      const enrollmentNumber = await generateEnrollmentNumber(admissionYear);
+
+      students.push({
+        name: faker.person.fullName(),
+        email: faker.internet.email(),
+        enrollmentNumber,
+        department: "Computer Science",
+        admissionYear,
+        admissionType: faker.helpers.arrayElement(["Regular", "DSY"]),
+        cgpa: parseFloat((Math.random() * 4 + 6).toFixed(2)), // 6.0 - 10.0
+        phone: faker.number.int({ min: 1000000000, max: 9999999999 }).toString(),
+        address: faker.location.streetAddress(),
+        dateOfBirth: faker.date.birthdate({ min: 18, max: 25, mode: "age" }),
+      });
+    }
+
+    const insertedStudents = await Student.insertMany(students);
+    res.json({ message: "10 dummy students added!", students: insertedStudents });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
 
 // Get all students with filtering and searching
 router.get('/', authenticateToken, async (req, res) => {
