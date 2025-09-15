@@ -498,12 +498,12 @@ const Results: React.FC = () => {
     const [studentsList, setStudentsList] = useState<any[]>([]);
     const [selectedStudent, setSelectedStudent] = useState<any>(null);
     const [subjects, setSubjects] = useState<any[]>([]);
-    const [loading, setLoading] = useState(false);
+    // const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
     const [errorMessage, setErrorMessage] = useState("");
 
     const fetchFilteredStudents = async () => {
-      setLoading(true);
+      // setLoading(true);
       setErrorMessage("");
       try {
         const params = new URLSearchParams(filters as any);
@@ -517,12 +517,12 @@ const Results: React.FC = () => {
         setErrorMessage(err.message);
         setStudentsList([]);
       } finally {
-        setLoading(false);
+        // setLoading(false);
       }
     };
 
     const fetchSubjects = async (student: any) => {
-      setLoading(true);
+      // setLoading(true);
       try {
         // 1. Get academic status (like AddResultModal)
         const response = await fetch(`/api/students/${student.enrollmentNumber}/academic-status`, {
@@ -567,7 +567,7 @@ const Results: React.FC = () => {
       } catch (err: any) {
         setErrorMessage(err.message);
       } finally {
-        setLoading(false);
+        // setLoading(false);
       }
     };
 
