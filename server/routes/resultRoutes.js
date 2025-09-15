@@ -17,26 +17,25 @@ const calculateGrade = (totalMarks) => {
   return 'F';
 };
 
-const processResultData = (student, yearOfStudy, semester, subjects) => {
+const processResultData = (student, yearOfStudy, semester, subjects, extraSubjects = []) => {
   const processedSubjects = new Map();
   let grandTotalMarks = 0;
   let grandTotalMaxMarks = 0; 
   const failedSubjects = [];
 
-  const subjectsData = getSubjectsForStudent(student, semester, yearOfStudy);
+  // Core subjects
+  const subjectsData = getSubjectsForStudent(student, semester, yearOfStudy) || [];
 
-  if (!subjectsData || subjectsData.length === 0) {
-    throw new Error(`Subject data not found for student's year and semester.`);
-  }
-
-  const courseMap = new Map(subjectsData.map(course => [course.courseName, course]));
+  // Merge in electives / MDM (if passed separately)
+  const mergedSubjectsData = [...subjectsData, ...extraSubjects];
+  const courseMap = new Map(mergedSubjectsData.map(course => [course.courseName, course]));
 
   for (const [subjectName, marks] of Object.entries(subjects)) {
     const subjectConfig = courseMap.get(subjectName);
-    
+
     if (!subjectConfig) {
-      console.warn(`Warning: Configuration for subject '${subjectName}' not found. Skipping validation.`);
-      continue;
+      console.warn(`⚠ Subject '${subjectName}' not found in course map (likely elective/MDM).`);
+      continue; // or allow dynamic creation
     }
 
     let totalMarks = 0;
@@ -47,53 +46,42 @@ const processResultData = (student, yearOfStudy, semester, subjects) => {
     subjectConfig.evaluationScheme.forEach(scheme => {
       const key = scheme.name.toLowerCase().replace(/[^a-z]/g, '');
       const studentMark = Number(marks[key]) || 0;
-      
-      subjectMaxMarks += scheme.maxMarks; 
 
-      if (studentMark < 0 || studentMark > scheme.maxMarks) {
-        throw new Error(`Invalid marks for ${scheme.name} in subject ${subjectName}. Marks must be between 0 and ${scheme.maxMarks}.`);
-      }
-      
-      if (scheme.minPassingMarks && studentMark < scheme.minPassingMarks) {
+      subjectMaxMarks += scheme.maxMarks;
+
+      if (studentMark < (scheme.minPassingMarks || 0)) {
         isPassing = false;
       }
-      
+
       totalMarks += studentMark;
       componentMarks.set(scheme.name, studentMark);
     });
 
     if (totalMarks < subjectConfig.minForPassing) {
-        isPassing = false;
+      isPassing = false;
     }
-    
-    const subjectStatus = isPassing ? 'PASS' : 'FAIL';
-    const normalizedMarksForGrade = (totalMarks / subjectMaxMarks) * 100;
-    const subjectGrade = calculateGrade(normalizedMarksForGrade);
 
-    if (subjectStatus === 'FAIL') {
-      failedSubjects.push(subjectName);
-    }
+    const status = isPassing ? 'PASS' : 'FAIL';
+    const grade = calculateGrade((totalMarks / subjectMaxMarks) * 100);
+
+    if (status === 'FAIL') failedSubjects.push(subjectName);
 
     processedSubjects.set(subjectName, {
       componentMarks,
       total: totalMarks,
-      grade: subjectGrade,
-      status: subjectStatus
+      grade,
+      status
     });
-    
-    grandTotalMarks += totalMarks;
-    grandTotalMaxMarks += subjectMaxMarks; 
-  }
 
-  const overallStatus = failedSubjects.length > 0 ? 'FAIL' : 'PASS';
-  
-  const percentage = grandTotalMaxMarks > 0 ? (grandTotalMarks / grandTotalMaxMarks) * 100 : 0;
+    grandTotalMarks += totalMarks;
+    grandTotalMaxMarks += subjectMaxMarks;
+  }
 
   return {
     subjects: Object.fromEntries(processedSubjects),
     totalMarks: grandTotalMarks,
-    percentage: parseFloat(percentage.toFixed(2)),
-    overallStatus,
+    percentage: grandTotalMaxMarks ? (grandTotalMarks / grandTotalMaxMarks) * 100 : 0,
+    overallStatus: failedSubjects.length ? 'FAIL' : 'PASS',
     failedSubjects,
     makeupRequired: failedSubjects
   };

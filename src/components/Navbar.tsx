@@ -50,7 +50,7 @@ const Navbar: React.FC<NavbarProps> = ({ onMenuClick }) => {
             {/* User menu */}
             <div className="flex items-center space-x-3">
               <div className="hidden sm:block text-right">
-                <p className="text-sm font-medium text-gray-900">{teacher?.name}</p>
+                <p className="text-sm font-medium text-gray-900">{teacher?.fullName}</p>
                 <p className="text-xs text-gray-500">{teacher?.department}</p>
               </div>
               

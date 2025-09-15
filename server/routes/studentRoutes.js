@@ -20,6 +20,24 @@ function generateAdmissionYear() {
   return `${startYear}-${endYear.toString().slice(-2)}`;
 }
 
+router.get("/filter", authenticateToken, async (req, res) => {
+  try {
+    const { department, academicYear, yearOfStudy, semester } = req.query;
+
+    const query = {};
+    if (department) query.department = department;
+    if (academicYear) query.admissionYear = academicYear;
+    if (yearOfStudy) query.yearOfStudy = parseInt(yearOfStudy);
+    if (semester) query.semester = parseInt(semester);
+
+    const students = await Student.find(query).select("name enrollmentNumber department yearOfStudy semester");
+    res.json({ success: true, students });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+
 router.get("/add-multiple-dummy", async (req, res) => {
   try {
     let students = [];
@@ -266,7 +284,7 @@ router.get('/:enrollmentId/academic-status', authenticateToken, async (req, res)
 
     res.json({
       success: true,
-      student: { id: student._id, name: student.name, department: student.department },
+      student: { id: student._id, name: student.name, department: student.department, enrollmentNumber:student.enrollmentNumber },
       nextResultSlot: {
         yearOfStudy: Math.ceil(nextSemester / 2),
         semester: nextSemester,

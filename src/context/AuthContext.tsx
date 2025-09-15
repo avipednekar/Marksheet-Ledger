@@ -7,7 +7,7 @@ const API_URL = 'http://localhost:5000/api';
 
 interface Teacher {
   id: string;
-  name: string;
+  fullName: string;
   email: string;
   department: string;
 }

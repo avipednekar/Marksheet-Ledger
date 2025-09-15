@@ -43,6 +43,7 @@ const Results: React.FC = () => {
   const [academicYearFilter, setAcademicYearFilter] = useState('');
   const [semesterFilter, setSemesterFilter] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showBatchAddModal, setShowBatchAddModal] = useState(false);
   const [viewingResult, setViewingResult] = useState<Result | null>(null);
   const [editingResult, setEditingResult] = useState<Result | null>(null);
 
@@ -297,7 +298,7 @@ const Results: React.FC = () => {
     const [enrollmentId, setEnrollmentId] = useState('');
     const [status, setStatus] = useState<'idle' | 'loading' | 'loaded' | 'error'>('idle');
     const [errorMessage, setErrorMessage] = useState('');
-    const [isSaving, setIsSaving] = useState(false); // FIX: State to track submission loading
+    const [isSaving, setIsSaving] = useState(false);
 
     const [studentDetails, setStudentDetails] = useState<any>(null);
     const [nextSlot, setNextSlot] = useState<any>(null);
@@ -345,7 +346,34 @@ const Results: React.FC = () => {
               throw new Error(data.message || 'Could not load subjects for this semester.');
             }
 
-            setSubjects(data.subjects.map((s: any) => ({ ...s, ise: '', mse: '', ese: '' })));
+            let loadedSubjects = data.subjects.map((s: any) => ({ ...s, ise: '', mse: '', ese: '' }));
+
+            // 🚀 Add MDM for sem >= 3
+            if (nextSlot.semester >= 3) {
+              loadedSubjects.push({
+                courseName: "MDM",
+                evaluationScheme: [{ name: "ESE", maxMarks: 100, minPassingMarks: 40 }],
+                ese: ''
+              });
+            }
+
+            // 🚀 Add Program + Open Electives for sem >= 5
+            if (nextSlot.semester >= 5) {
+              loadedSubjects.push(
+                {
+                  courseName: "Program Elective",
+                  evaluationScheme: [{ name: "ESE", maxMarks: 100, minPassingMarks: 40 }],
+                  ese: ''
+                },
+                {
+                  courseName: "Open Elective",
+                  evaluationScheme: [{ name: "ESE", maxMarks: 100, minPassingMarks: 40 }],
+                  ese: ''
+                }
+              );
+            }
+
+            setSubjects(loadedSubjects);
             setErrorMessage('');
           } catch (err: any) {
             setErrorMessage(err.message);
@@ -362,10 +390,9 @@ const Results: React.FC = () => {
       setSubjects(newSubjects);
     };
 
-    // FIX: Make handleSubmit async to await the onAdd operation
     const handleSubmit = async (e: React.FormEvent) => {
       e.preventDefault();
-      setIsSaving(true); // Start loading
+      setIsSaving(true);
 
       const resultData = {
         enrollmentNumber: enrollmentId,
@@ -385,12 +412,11 @@ const Results: React.FC = () => {
       };
 
       try {
-        await onAdd(resultData); // Wait for the API call to complete
+        await onAdd(resultData);
       } catch (error) {
-        // Error is handled by the parent, but we ensure the spinner stops
         console.error("Failed to add result:", error);
       } finally {
-        setIsSaving(false); // Stop loading
+        setIsSaving(false);
       }
     };
 
@@ -457,11 +483,226 @@ const Results: React.FC = () => {
             <div className="p-6 border-t flex justify-end space-x-3">
               <button type="button" onClick={onClose} className="px-4 py-2 bg-white border rounded-lg">Cancel</button>
               <button type="submit" disabled={status !== 'loaded' || subjects.length === 0 || isSaving} className="px-4 py-2 bg-blue-600 text-white rounded-lg disabled:opacity-50 w-28 text-center">
-                {/* FIX: Conditional rendering for the spinner */}
                 {isSaving ? <LoadingSpinner size="sm" /> : 'Save Result'}
               </button>
             </div>
           </form>
+        </div>
+      </div>
+    );
+  };
+
+  const BatchAddResultModal: React.FC<{ onClose: () => void; onAdd: (data: any) => Promise<void>; }> = ({ onClose, onAdd }) => {
+    const { token } = useAuth();
+    const [filters, setFilters] = useState({ department: "", academicYear: "" });
+    const [studentsList, setStudentsList] = useState<any[]>([]);
+    const [selectedStudent, setSelectedStudent] = useState<any>(null);
+    const [subjects, setSubjects] = useState<any[]>([]);
+    const [loading, setLoading] = useState(false);
+    const [saving, setSaving] = useState(false);
+    const [errorMessage, setErrorMessage] = useState("");
+
+    const fetchFilteredStudents = async () => {
+      setLoading(true);
+      setErrorMessage("");
+      try {
+        const params = new URLSearchParams(filters as any);
+        const response = await fetch(`/api/students/filter?${params}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const data = await response.json();
+        if (!response.ok || !data.success) throw new Error(data.message || "Failed to fetch students");
+        setStudentsList(data.students);
+      } catch (err: any) {
+        setErrorMessage(err.message);
+        setStudentsList([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    const fetchSubjects = async (student: any) => {
+      setLoading(true);
+      try {
+        // 1. Get academic status (like AddResultModal)
+        const response = await fetch(`/api/students/${student.enrollmentNumber}/academic-status`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.message);
+
+        const studentDetails = data.student;
+        const nextSlot = data.nextResultSlot;
+
+        // 2. Fetch subjects for nextSlot
+        const params = new URLSearchParams({
+          enrollmentNumber: student.enrollmentNumber,
+          semester: nextSlot.semester.toString(),
+          year: nextSlot.yearOfStudy
+        });
+        const subjResponse = await fetch(`/api/subjects?${params}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const subjData = await subjResponse.json();
+        if (!subjResponse.ok || !subjData.success) throw new Error(subjData.message);
+
+        let loadedSubjects = subjData.subjects.map((s: any) => ({ ...s, ise: "", mse: "", ese: "" }));
+
+        if (nextSlot.semester >= 3) {
+          loadedSubjects.push({
+            courseName: "MDM",
+            evaluationScheme: [{ name: "ESE", maxMarks: 100, minPassingMarks: 40 }],
+            ese: ""
+          });
+        }
+        if (nextSlot.semester >= 5) {
+          loadedSubjects.push(
+            { courseName: "Program Elective", evaluationScheme: [{ name: "ESE", maxMarks: 100, minPassingMarks: 40 }], ese: "" },
+            { courseName: "Open Elective", evaluationScheme: [{ name: "ESE", maxMarks: 100, minPassingMarks: 40 }], ese: "" }
+          );
+        }
+        // console.log("Details: ",studentDetails);
+        setSubjects(loadedSubjects);
+        setSelectedStudent({ ...studentDetails, nextSlot });
+      } catch (err: any) {
+        setErrorMessage(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+
+    const handleSubjectChange = (index: number, field: string, value: string) => {
+      const updated = [...subjects];
+      updated[index][field] = value;
+      setSubjects(updated);
+    };
+
+    const handleSave = async () => {
+      if (!selectedStudent) return;
+      setSaving(true);
+
+      const resultData = {
+        enrollmentNumber: selectedStudent.enrollmentNumber,
+        ...selectedStudent.nextSlot,
+        examType: "ESE",
+        subjects: subjects.reduce((acc, subject) => {
+          const marks: Record<string, number> = {};
+          subject.evaluationScheme.forEach((scheme: any) => {
+            const key = scheme.name.toLowerCase().replace(/[^a-z]/g, "");
+            marks[key] = Number(subject[key]) || 0;
+          });
+          acc[subject.courseName] = marks;
+          return acc;
+        }, {})
+      };
+
+      try {
+        await onAdd(resultData);
+        setSelectedStudent(null);
+        setSubjects([]);
+      } catch (err) {
+        console.error("Save failed", err);
+      } finally {
+        setSaving(false);
+      }
+    };
+
+
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div className="bg-white rounded-lg shadow-xl max-w-5xl w-full max-h-screen overflow-y-auto">
+          <div className="p-6 border-b flex justify-between items-center">
+            <h2 className="text-xl font-semibold">Batch Add Result</h2>
+            <button onClick={onClose} className="text-gray-500 hover:text-gray-700">✕</button>
+          </div>
+
+          <div className="p-6 space-y-4">
+            {/* Filter Section */}
+            <div className="grid grid-cols-2 gap-4">
+              <select
+                onChange={(e) => setFilters({ ...filters, department: e.target.value })}
+                className="border px-2 py-1 rounded"
+              >
+                <option value="">Department</option>
+                <option value="Computer Science">CSE</option>
+                <option value="IT">IT</option>
+                <option value="MECH">MECH</option>
+              </select>
+
+              <select
+                onChange={(e) => setFilters({ ...filters, academicYear: e.target.value })}
+                className="border px-2 py-1 rounded"
+              >
+                <option value="">Admission Year</option>
+                <option value="2022-23">2022-23</option>
+                <option value="2023-24">2023-24</option>
+                <option value="2024-25">2024-25</option>
+              </select>
+            </div>
+
+            <button onClick={fetchFilteredStudents} className="bg-blue-600 text-white px-3 py-2 rounded">Search Students</button>
+
+            {/* Error */}
+            {errorMessage && <div className="p-3 bg-red-100 text-red-700 rounded">{errorMessage}</div>}
+
+            {/* Student List */}
+            {studentsList.length > 0 && !selectedStudent && (
+              <div className="mt-4">
+                <h3 className="font-semibold mb-2">Select a Student</h3>
+                <ul className="border rounded divide-y max-h-56 overflow-y-auto">
+                  {studentsList.map(stu => (
+                    <li key={stu.enrollmentNumber}>
+                      <button onClick={() => fetchSubjects(stu)} className="w-full text-left px-3 py-2 hover:bg-gray-50">
+                        {stu.name} ({stu.enrollmentNumber})
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* Subject Entry */}
+            {selectedStudent && (
+              <div className="space-y-4 mt-4">
+                <div className="bg-gray-50 p-4 rounded">
+                  <p><strong>{selectedStudent.name}</strong> ({selectedStudent.enrollmentNumber})</p>
+                  <p>{selectedStudent.department}</p>
+                </div>
+
+                {subjects.map((subject, index) => (
+                  <div key={index} className="border p-3 rounded space-y-2">
+                    <p className="font-medium">{subject.courseName}</p>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                      {subject.evaluationScheme.map((scheme: any) => {
+                        const key = scheme.name.toLowerCase().replace(/[^a-z]/g, "");
+                        return (
+                          <input
+                            key={scheme.name}
+                            type="number"
+                            placeholder={`${scheme.name} (${scheme.maxMarks})`}
+                            value={subject[key] || ""}
+                            onChange={e => handleSubjectChange(index, key, e.target.value)}
+                            className="px-2 py-1 border rounded"
+                            min="0"
+                            max={scheme.maxMarks}
+                            required
+                          />
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+
+                <div className="flex justify-end space-x-3">
+                  <button onClick={() => setSelectedStudent(null)} className="px-4 py-2 border rounded bg-gray-100">Back</button>
+                  <button onClick={handleSave} disabled={saving} className="px-4 py-2 bg-blue-600 text-white rounded">
+                    {saving ? "Saving..." : "Save Result"}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     );
@@ -640,6 +881,14 @@ const Results: React.FC = () => {
           <Plus className="h-4 w-4 mr-2" />
           Add Result
         </button>
+
+        <button
+          onClick={() => setShowBatchAddModal(true)}
+          className="mt-4 sm:mt-0 inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+        >
+          <Plus className="h-4 w-4 mr-2" />
+          Batch Add Result
+        </button>
       </div>
       {/* Filters */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
@@ -785,7 +1034,16 @@ const Results: React.FC = () => {
                   <Plus className="h-4 w-4 mr-2" />
                   Add Result
                 </button>
-              )}
+              ) && (
+                  <button
+                    onClick={() => setShowBatchAddModal(true)}
+                    className="mt-4 sm:mt-0 inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Batch Add Result
+                  </button>
+                )
+              }
             </div>
           )}
         </div>
@@ -802,6 +1060,13 @@ const Results: React.FC = () => {
       {showAddModal && (
         <AddResultModal
           onClose={() => setShowAddModal(false)}
+          onAdd={handleAddResult}
+        />
+      )}
+
+      {showBatchAddModal && (
+        <BatchAddResultModal
+          onClose={() => setShowBatchAddModal(false)}
           onAdd={handleAddResult}
         />
       )}
