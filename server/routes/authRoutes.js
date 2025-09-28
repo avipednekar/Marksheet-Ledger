@@ -25,7 +25,7 @@ router.post('/login', async (req, res) => {
 
     // --- CHANGED: Access token is now short-lived ---
     const accessToken = jwt.sign(
-      { id: teacher._id, email: teacher.email, name: teacher.fullName },
+      { id: teacher._id, email: teacher.email, fullName: teacher.fullName },
       process.env.JWT_SECRET,
       { expiresIn: '24h' } // 15 minutes is a standard, secure lifespan
     );
@@ -58,7 +58,7 @@ router.post('/login', async (req, res) => {
       accessToken, // Client only receives the access token
       teacher: {
         id: teacher._id,
-        name: teacher.fullName,
+        fullName: teacher.fullName,
         email: teacher.email,
         department: teacher.department,
       },
@@ -88,7 +88,7 @@ router.post('/refresh', async (req, res) => {
       }
 
       const accessToken = jwt.sign(
-        { id: teacher._id, email: teacher.email, name: teacher.fullName },
+        { id: teacher._id, email: teacher.email, fullName: teacher.fullName },
         process.env.JWT_SECRET,
         { expiresIn: '24h' } // Should also be short-lived
       );
