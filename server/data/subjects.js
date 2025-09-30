@@ -67,7 +67,7 @@ export const subjectMappings = {
       { courseCode: "UCSVE0306", courseName: "Constitution of India", credits: 2, courseType: 'Value Added', minForPassing: 20, evaluationScheme: [{ name: "ISE", maxMarks: 50, minPassingMarks: 20 }] },
       { courseCode: "UCSPC0331", courseName: "Advanced Data Structures and Algorithms Lab", credits: 1, courseType: 'Lab', minForPassing: 10, evaluationScheme: [{ name: "ISE", maxMarks: 25 }, { name: "ESE (POE)", maxMarks: 25, minPassingMarks: 10 }] },
       { courseCode: "UCSPC0332", courseName: "Computer Networks Lab", credits: 1, courseType: 'Lab', minForPassing: 10, evaluationScheme: [{ name: "ISE", maxMarks: 25 }, { name: "ESE (POE)", maxMarks: 25, minPassingMarks: 10 }] },
-      { courseCode: "UCSPC0333", courseName: "Object Oriented Programming Lab", credits: 2, courseType: 'Lab', minForPassing: 20, evaluationScheme: [{ name: "ISE", maxMarks: 50 }, { name: "ESE (POE)", maxMarks: 50, minPassingMarks: 20 }] },
+      { courseCode: "UCSPC0333", courseName: "Object Oriented Programming Lab", credits: 2, courseType: 'Lab', minForPassing: 20, evaluationScheme: [{ name: "ISE", maxMarks: 25 }, { name: "ESE (POE)", maxMarks: 50, minPassingMarks: 20 }] },
       { courseCode: "UCSIL0371", courseName: "Mini Project- I", credits: 1, courseType: 'Core', minForPassing: 10, evaluationScheme: [{ name: "ISE", maxMarks: 25, minPassingMarks: 10 }] },
       { courseCode: "UCSMM034*", courseName: "Multi-Disciplinary Minor (MDM-I)", credits: 2, courseType: 'MDM', minForPassing: 40, evaluationScheme: [{ name: "ESE", maxMarks: 100, minPassingMarks: 40 }] },
     ],

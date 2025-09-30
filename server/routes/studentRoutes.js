@@ -118,23 +118,54 @@ router.get('/:enrollmentNumber', authenticateToken, async (req, res) => {
 // Add new student
 router.post('/', authenticateToken, async (req, res) => {
   try {
-    const { enrollmentNumber, email, admissionYear } = req.body;
-    
+    const {
+      name,
+      email,
+      enrollmentNumber,
+      department,
+      admissionYear,
+      admissionType,
+      phone,
+      dateOfBirth,
+      address
+    } = req.body;
+
     if (!admissionYear) {
-        return res.status(400).json({ success: false, message: 'Admission Year is required.' });
+      return res.status(400).json({ success: false, message: 'Admission Year is required.' });
     }
 
+    // Normalize admissionType
+    let normalizedType = admissionType;
+    if (admissionType === "Regular (First Year)") normalizedType = "Regular";
+    if (admissionType === "Direct Second Year") normalizedType = "DSY";
+
+    // Check duplicate
     const existingStudent = await Student.findOne({ $or: [{ enrollmentNumber }, { email }] });
     if (existingStudent) {
       return res.status(409).json({ success: false, message: 'Student with this enrollment number or email already exists' });
     }
 
-    const newStudent = await Student.create(req.body);
+    // Create new student with all fields
+    const newStudent = await Student.create({
+      name,
+      email,
+      enrollmentNumber,
+      department,
+      admissionYear,
+      admissionType: normalizedType,
+      phone,
+      dateOfBirth,
+      address,
+      cgpa: null // optional, can add later
+    });
+
     res.status(201).json({ success: true, message: 'Student added successfully', student: newStudent });
   } catch (error) {
-    res.status(500).json({ success: false, message: 'Error adding student' });
+    console.error('Error adding student:', error);
+    res.status(500).json({ success: false, message: error.message });
   }
 });
+
 
 router.put('/:enrollmentNumber/mdm', authenticateToken, async (req, res) => {
   try {
