@@ -1,5 +1,3 @@
-// src/components/EditResultModal.tsx
-
 import React, { useState, useEffect } from 'react';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import { useAuth } from '../../context/AuthContext';
@@ -76,46 +74,45 @@ const EditResultModal: React.FC<EditResultModalProps> = ({ result, onClose, onSa
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSaving(true);
-    setFormError('');
+  e.preventDefault();
+  setSaving(true);
+  setFormError('');
 
-    // Dynamically build the payload: map courseName to its componentMarks
-    const subjectsPayload = subjects.reduce((acc, subject) => {
-      const marks: Record<string, number> = {};
-      subject.evaluationScheme.forEach((scheme: any) => {
-        const key = getMarkKey(scheme.name);
-        // Use original scheme name as key in componentMarks
-        // Convert to number, defaulting to 0 if conversion fails (e.g., empty string)
-        marks[scheme.name] = Number((subject as any)[key]) || 0;
-      });
-      acc[subject.courseName] = { componentMarks: marks };
-      return acc;
-    }, {} as Record<string, { componentMarks: Record<string, number> }>);
+  // Build payload in flat format
+  const subjectsPayload = subjects.reduce((acc, subject) => {
+    const marks: Record<string, number> = {};
+    subject.evaluationScheme.forEach((scheme: any) => {
+      const key = getMarkKey(scheme.name);
+      // Convert to number, default to 0 if empty
+      marks[key] = Number((subject as any)[key]) || 0;
+    });
+    acc[subject.courseName] = marks; // ✅ no "componentMarks"
+    return acc;
+  }, {} as Record<string, Record<string, number>>);
 
+  try {
+    const response = await fetch(`/api/results/${result.id}`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ subjects: subjectsPayload }) 
+    });
 
-    try {
-      const response = await fetch(`/api/results/${result.id}`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        // Only sending the subjects to be updated, the server should handle the rest of the result calculation
-        body: JSON.stringify({ subjects: subjectsPayload }) 
-      });
-      const data = await response.json();
-      if (data.success) {
-        onSave(); // Close modal and refresh list
-      } else {
-        setFormError(data.message || 'Failed to update result.');
-      }
-    } catch (err) {
-      setFormError('A network error occurred. Please try again.');
-    } finally {
-      setSaving(false);
+    const data = await response.json();
+    if (data.success) {
+      onSave(); // Close modal and refresh list
+    } else {
+      setFormError(data.message || 'Failed to update result.');
     }
-  };
+  } catch (err) {
+    setFormError('A network error occurred. Please try again.');
+  } finally {
+    setSaving(false);
+  }
+};
+
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
