@@ -7,6 +7,7 @@ import Students from './pages/Students';
 import Results from './pages/Results';
 import Login from './pages/Login';
 import UnderProcess from './pages/UnderProcess';
+import TeacherFilterPage from './pages/TeacherFilterPage';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import LoadingSpinner from './components/LoadingSpinner';
 
@@ -102,6 +103,12 @@ function App() {
                   <Results />
                 </ProtectedRoute>
               } 
+            />
+            <Route 
+              path="/filter" 
+              element={
+                <TeacherFilterPage 
+              />} 
             />
             <Route 
               path="/analytics" 

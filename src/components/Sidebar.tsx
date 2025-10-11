@@ -35,6 +35,12 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       description: 'Academic Results'
     },
     {
+      name: 'Filter',
+      href: '/filter',
+      icon: Users,
+      description: 'Filter by Teacher'
+    },
+    {
       name: 'Analytics',
       href: '/analytics',
       icon: BarChart3,
