@@ -5,7 +5,7 @@ import LoadingSpinner from '../../components/LoadingSpinner';
 import { useAuth } from '../../context/AuthContext';
 import { getMarkKey } from '../../helpers/Utils';
 import { SubjectConfig, StudentDetails, NextResultSlot } from '../../helpers/interfaces';
-
+ 
 interface AddResultModalProps {
   onClose: () => void;
   onAdd: (data: any) => Promise<void>;

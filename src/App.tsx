@@ -7,7 +7,7 @@ import Students from './pages/Students';
 import Results from './pages/Results';
 import Login from './pages/Login';
 import UnderProcess from './pages/UnderProcess';
-import TeacherFilterPage from './pages/TeacherFilterPage';
+import StudentDataViewer from './pages/StudentDataViewer';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import LoadingSpinner from './components/LoadingSpinner';
 
@@ -107,7 +107,7 @@ function App() {
             <Route 
               path="/filter" 
               element={
-                <TeacherFilterPage 
+                <StudentDataViewer 
               />} 
             />
             <Route 
