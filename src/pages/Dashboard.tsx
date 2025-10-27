@@ -1,3 +1,4 @@
+// Dashboard.tsx
 import React, { useState, useEffect } from 'react';
 import { 
   Users, 
@@ -95,55 +96,56 @@ const Dashboard: React.FC = () => {
       title: 'Total Students',
       value: stats?.overview.totalStudents || 0,
       icon: Users,
-      color: 'blue',
+      color: 'indigo', // Updated
       change: '+12%'
     },
     {
       title: 'Results Published',
       value: stats?.overview.totalResults || 0,
       icon: FileText,
-      color: 'emerald',
+      color: 'violet', // Updated
       change: '+8%'
     },
     {
       title: 'Pass Percentage',
       value: `${stats?.overview.passPercentage || 0}%`,
       icon: TrendingUp,
-      color: 'green',
+      color: 'green', // Semantic
       change: '+5.2%'
     },
     {
       title: 'Pending Makeups',
       value: stats?.overview.pendingMakeups || 0,
       icon: AlertTriangle,
-      color: 'orange',
+      color: 'orange', // Semantic
       change: '-3%'
     }
   ];
 
   const colorVariants = {
-    blue: 'from-blue-500 to-blue-600',
-    emerald: 'from-emerald-500 to-emerald-600',
+    indigo: 'from-indigo-500 to-indigo-600', // Updated
+    violet: 'from-violet-500 to-violet-600', // Updated
     green: 'from-green-500 to-green-600',
     orange: 'from-orange-500 to-orange-600'
   };
 
   return (
-    <div>
+    // Page container (inherits bg-neutral-100)
+    <div className="space-y-6">
       {/* Header */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+      <div className="bg-white rounded-lg shadow-sm border border-neutral-200 p-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">
+            <h1 className="text-2xl font-bold text-neutral-900">
               Welcome back, {teacher?.fullName}
             </h1>
-            <p className="text-gray-600 mt-1">
+            <p className="text-neutral-600 mt-1">
               Here's what's happening in your {teacher?.department} department today.
             </p>
           </div>
           <div className="flex items-center space-x-2">
-            <Calendar className="h-5 w-5 text-gray-400" />
-            <span className="text-sm text-gray-600">
+            <Calendar className="h-5 w-5 text-neutral-400" />
+            <span className="text-sm text-neutral-600">
               {new Date().toLocaleDateString('en-US', { 
                 weekday: 'long', 
                 year: 'numeric', 
@@ -160,12 +162,12 @@ const Dashboard: React.FC = () => {
         {statCards.map((card, index) => {
           const Icon = card.icon;
           return (
-            <div key={index} className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+            <div key={index} className="bg-white rounded-lg shadow-sm border border-neutral-200 overflow-hidden">
               <div className="p-6">
                 <div className="flex items-center justify-between">
                   <div className="flex-1">
-                    <p className="text-sm font-medium text-gray-600 mb-1">{card.title}</p>
-                    <p className="text-3xl font-bold text-gray-900">{card.value}</p>
+                    <p className="text-sm font-medium text-neutral-600 mb-1">{card.title}</p>
+                    <p className="text-3xl font-bold text-neutral-900">{card.value}</p>
                     <p className="text-sm text-green-600 mt-2 flex items-center">
                       <TrendingUp className="h-4 w-4 mr-1" />
                       {card.change} from last month
@@ -184,14 +186,14 @@ const Dashboard: React.FC = () => {
       {/* Recent Activity & Quick Stats */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Recent Activity */}
-        <div className="lg:col-span-2 bg-white rounded-lg shadow-sm border border-gray-200">
-          <div className="p-6 border-b border-gray-200">
+        <div className="lg:col-span-2 bg-white rounded-lg shadow-sm border border-neutral-200">
+          <div className="p-6 border-b border-neutral-200">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-gray-900 flex items-center">
-                <Activity className="h-5 w-5 mr-2 text-blue-600" />
+              <h2 className="text-lg font-semibold text-neutral-900 flex items-center">
+                <Activity className="h-5 w-5 mr-2 text-indigo-600" />
                 Recent Activity
               </h2>
-              <button className="text-sm text-blue-600 hover:text-blue-700 font-medium">
+              <button className="text-sm text-indigo-600 hover:text-indigo-700 font-medium">
                 View All
               </button>
             </div>
@@ -200,14 +202,14 @@ const Dashboard: React.FC = () => {
             {stats?.recentActivity && stats.recentActivity.length > 0 ? (
               <div className="space-y-4">
                 {stats.recentActivity.slice(0, 5).map((activity) => (
-                  <div key={activity.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div key={activity.id} className="flex items-center justify-between p-3 bg-neutral-50 rounded-lg">
                     <div className="flex items-center space-x-3">
                       <div className={`h-2 w-2 rounded-full ${
                         activity.status === 'PASS' ? 'bg-green-500' : 'bg-red-500'
                       }`}></div>
                       <div>
-                        <p className="font-medium text-gray-900">{activity.studentName}</p>
-                        <p className="text-sm text-gray-600">
+                        <p className="font-medium text-neutral-900">{activity.studentName}</p>
+                        <p className="text-sm text-neutral-600">
                           {activity.examType} - {activity.percentage}%
                         </p>
                       </div>
@@ -220,7 +222,7 @@ const Dashboard: React.FC = () => {
                       }`}>
                         {activity.status}
                       </span>
-                      <p className="text-xs text-gray-500 mt-1">
+                      <p className="text-xs text-neutral-500 mt-1">
                         {new Date(activity.createdAt).toLocaleDateString()}
                       </p>
                     </div>
@@ -229,18 +231,18 @@ const Dashboard: React.FC = () => {
               </div>
             ) : (
               <div className="text-center py-8">
-                <BookOpen className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-600">No recent activity</p>
+                <BookOpen className="h-12 w-12 text-neutral-400 mx-auto mb-4" />
+                <p className="text-neutral-600">No recent activity</p>
               </div>
             )}
           </div>
         </div>
 
         {/* Year-wise Performance */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-          <div className="p-6 border-b border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-900 flex items-center">
-              <Award className="h-5 w-5 mr-2 text-emerald-600" />
+        <div className="bg-white rounded-lg shadow-sm border border-neutral-200">
+          <div className="p-6 border-b border-neutral-200">
+            <h2 className="text-lg font-semibold text-neutral-900 flex items-center">
+              <Award className="h-5 w-5 mr-2 text-indigo-600" />
               Year-wise Performance
             </h2>
           </div>
@@ -249,14 +251,14 @@ const Dashboard: React.FC = () => {
               {stats?.yearStats && Object.entries(stats.yearStats).map(([year, data]: [string, any]) => (
                 <div key={year} className="flex items-center justify-between">
                   <div>
-                    <p className="font-medium text-gray-900">Year {year}</p>
-                    <p className="text-sm text-gray-600">{data.totalStudents} students</p>
+                    <p className="font-medium text-neutral-900">Year {year}</p>
+                    <p className="text-sm text-neutral-600">{data.totalStudents} students</p>
                   </div>
                   <div className="text-right">
-                    <p className="font-semibold text-gray-900">{data.passPercentage}%</p>
-                    <div className="w-16 bg-gray-200 rounded-full h-2 mt-1">
+                    <p className="font-semibold text-neutral-900">{data.passPercentage}%</p>
+                    <div className="w-16 bg-neutral-200 rounded-full h-2 mt-1">
                       <div 
-                        className="bg-emerald-500 h-2 rounded-full transition-all duration-300"
+                        className="bg-indigo-500 h-2 rounded-full transition-all duration-300"
                         style={{ width: `${data.passPercentage}%` }}
                       ></div>
                     </div>
@@ -269,22 +271,22 @@ const Dashboard: React.FC = () => {
       </div>
 
       {/* Exam Type Statistics */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-        <div className="p-6 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-900">Exam Type Performance</h2>
+      <div className="bg-white rounded-lg shadow-sm border border-neutral-200">
+        <div className="p-6 border-b border-neutral-200">
+          <h2 className="text-lg font-semibold text-neutral-900">Exam Type Performance</h2>
         </div>
         <div className="p-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {stats?.examTypeStats && Object.entries(stats.examTypeStats).map(([examType, data]: [string, any]) => (
               <div key={examType} className="text-center">
-                <div className="bg-gray-50 rounded-lg p-4 mb-3">
-                  <h3 className="font-semibold text-gray-900 text-lg">{examType}</h3>
-                  <p className="text-2xl font-bold text-blue-600 mt-2">{data.passPercentage}%</p>
-                  <p className="text-sm text-gray-600">{data.totalResults} results</p>
+                <div className="bg-neutral-50 rounded-lg p-4 mb-3">
+                  <h3 className="font-semibold text-neutral-900 text-lg">{examType}</h3>
+                  <p className="text-2xl font-bold text-indigo-600 mt-2">{data.passPercentage}%</p>
+                  <p className="text-sm text-neutral-600">{data.totalResults} results</p>
                 </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
+                <div className="w-full bg-neutral-200 rounded-full h-2">
                   <div 
-                    className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                    className="bg-indigo-600 h-2 rounded-full transition-all duration-300"
                     style={{ width: `${data.passPercentage}%` }}
                   ></div>
                 </div>

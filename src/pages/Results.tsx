@@ -1,3 +1,4 @@
+// Results.tsx
 import React, { useState, useEffect } from 'react';
 import {
   Plus, Search, Filter, FileText, Download
@@ -102,13 +103,13 @@ const Results: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Results Management</h1>
-          <p className="text-gray-600 mt-1">View and manage student exam results</p>
+          <h1 className="text-2xl font-bold text-neutral-900">Results Management</h1>
+          <p className="text-neutral-600 mt-1">View and manage student exam results</p>
         </div>
         <div className='flex space-x-4 mt-4 sm:mt-0'>
           <button
             onClick={() => setShowAddModal(true)}
-            className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            className="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
           >
             <Plus className="h-4 w-4 mr-2" />
             Add Result
@@ -124,33 +125,33 @@ const Results: React.FC = () => {
         </div>
       </div>
       {/* Filters */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+      <div className="bg-white rounded-lg shadow-sm border border-neutral-200 p-6">
         <div className="flex items-center space-x-2 mb-4">
-          <Filter className="h-5 w-5 text-gray-400" />
-          <h2 className="font-semibold text-gray-900">Advanced Filters</h2>
+          <Filter className="h-5 w-5 text-neutral-400" />
+          <h2 className="font-semibold text-neutral-900">Advanced Filters</h2>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Search</label>
+            <label className="block text-sm font-medium text-neutral-700 mb-1">Search</label>
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-neutral-400" />
               <input
                 type="text"
                 placeholder="Student name or ID..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full pl-10 pr-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Year</label>
+            <label className="block text-sm font-medium text-neutral-700 mb-1">Year</label>
             <select
               value={yearFilter}
               onChange={(e) => setYearFilter(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
             >
               <option value="">All Years</option>
               <option value="1">1st Year</option>
@@ -161,11 +162,11 @@ const Results: React.FC = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Semester</label>
+            <label className="block text-sm font-medium text-neutral-700 mb-1">Semester</label>
             <select
               value={semesterFilter}
               onChange={(e) => setSemesterFilter(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
             >
               <option value="">All Semesters</option>
               {[1, 2, 3, 4, 5, 6, 7, 8].map(sem => (
@@ -175,11 +176,11 @@ const Results: React.FC = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Exam Type</label>
+            <label className="block text-sm font-medium text-neutral-700 mb-1">Exam Type</label>
             <select
               value={examTypeFilter}
               onChange={(e) => setExamTypeFilter(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
             >
               <option value="">All Types</option>
               <option value="ISE">ISE</option>
@@ -190,11 +191,11 @@ const Results: React.FC = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+            <label className="block text-sm font-medium text-neutral-700 mb-1">Status</label>
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
             >
               <option value="">All Status</option>
               <option value="PASS">Pass</option>
@@ -203,11 +204,11 @@ const Results: React.FC = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Academic Year</label>
+            <label className="block text-sm font-medium text-neutral-700 mb-1">Academic Year</label>
             <select
               value={academicYearFilter}
               onChange={(e) => setAcademicYearFilter(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
             >
               <option value="">All Years</option>
               <option value="2023-24">2023-24</option>
@@ -225,13 +226,13 @@ const Results: React.FC = () => {
       )}
 
       {/* Results List */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-        <div className="p-6 border-b border-gray-200">
+      <div className="bg-white rounded-lg shadow-sm border border-neutral-200">
+        <div className="p-6 border-b border-neutral-200">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-gray-900">
+            <h2 className="text-lg font-semibold text-neutral-900">
               Results ({results?.length})
             </h2>
-            <button className="flex items-center px-3 py-2 text-sm text-gray-600 hover:text-gray-900 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+            <button className="flex items-center px-3 py-2 text-sm text-neutral-600 hover:text-neutral-900 border border-neutral-300 rounded-lg hover:bg-neutral-50 transition-colors">
               <Download className="h-4 w-4 mr-2" />
               Export All
             </button>
@@ -256,9 +257,9 @@ const Results: React.FC = () => {
             </div>
           ) : (
             <div className="text-center py-12">
-              <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No results found</h3>
-              <p className="text-gray-600 mb-4">
+              <FileText className="h-12 w-12 text-neutral-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-neutral-900 mb-2">No results found</h3>
+              <p className="text-neutral-600 mb-4">
                 {searchTerm || yearFilter || examTypeFilter || statusFilter || academicYearFilter || semesterFilter
                   ? 'Try adjusting your filters'
                   : 'Get started by adding exam results'
@@ -268,7 +269,7 @@ const Results: React.FC = () => {
                 <div className='flex justify-center space-x-4'>
                   <button
                     onClick={() => setShowAddModal(true)}
-                    className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                    className="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
                   >
                     <Plus className="h-4 w-4 mr-2" />
                     Add Result

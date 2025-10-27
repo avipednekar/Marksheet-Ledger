@@ -1,6 +1,7 @@
+// StudentDataViewer.tsx
 import React, { useState } from 'react';
-import Navbar from "../components/Navbar";
-import Sidebar from "../components/Sidebar";
+
+// --- REMOVED Navbar and Sidebar imports ---
 
 // Define data interfaces
 interface Course {
@@ -19,7 +20,7 @@ interface StudentData {
 }
 
 const StudentDataViewer: React.FC = () => {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  // --- REMOVED isSidebarOpen state ---
   const [prn, setPrn] = useState<string>('');
   const [branch, setBranch] = useState<'FY' | 'CSE'>('FY');
   const [studentData, setStudentData] = useState<StudentData | null>(null);
@@ -110,151 +111,143 @@ const StudentDataViewer: React.FC = () => {
     }) ?? [];
 
   return (
-    <div className="flex h-screen bg-gray-100 font-sans">
-      <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+    // --- REMOVED main layout wrappers ---
+    // This div will now render inside App.tsx's <main> element
+    <div className="max-w-5xl mx-auto">
+      <h1 className="text-3xl font-bold text-center text-neutral-900 mb-6">
+        Student Result Viewer
+      </h1>
 
-      <div className="flex-1 flex flex-col">
-        <Navbar onMenuClick={() => setIsSidebarOpen(!isSidebarOpen)} />
+      {/* Search Form */}
+      <form
+        onSubmit={handleSearch}
+        className="flex flex-col sm:flex-row gap-4 mb-8"
+      >
+        <input
+          type="text"
+          value={prn}
+          onChange={(e) => setPrn(e.target.value)}
+          placeholder="Enter Student PRN"
+          className="flex-1 p-3 border border-neutral-300 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+        />
 
-        <main className="flex-1 p-6 overflow-y-auto">
-          <div className="max-w-4xl mx-auto">
-            <h1 className="text-3xl font-bold text-center text-gray-800 mb-6">
-              Student Result Viewer
-            </h1>
+        <select
+          value={branch}
+          onChange={(e) => setBranch(e.target.value as 'FY' | 'CSE')}
+          className="p-3 border border-neutral-300 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+        >
+          <option value="FY">FY</option>
+          <option value="CSE">CSE</option>
+        </select>
 
-            {/* Search Form */}
-            <form
-              onSubmit={handleSearch}
-              className="flex flex-col sm:flex-row gap-4 mb-8"
-            >
-              <input
-                type="text"
-                value={prn}
-                onChange={(e) => setPrn(e.target.value)}
-                placeholder="Enter Student PRN"
-                className="flex-1 p-3 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
+        <button
+          type="submit"
+          className="py-3 px-6 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-75 disabled:bg-neutral-400 disabled:cursor-not-allowed"
+          disabled={loading}
+        >
+          {loading ? 'Searching...' : 'Search'}
+        </button>
+      </form>
 
-              <select
-                value={branch}
-                onChange={(e) => setBranch(e.target.value as 'FY' | 'CSE')}
-                className="p-3 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              >
-                <option value="FY">FY</option>
-                <option value="CSE">CSE</option>
-              </select>
+      {/* Error */}
+      {error && (
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg text-center">
+          {error}
+        </div>
+      )}
 
-              <button
-                type="submit"
-                className="py-3 px-6 bg-blue-500 text-white font-semibold rounded-md shadow-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-75 disabled:bg-gray-400 disabled:cursor-not-allowed"
-                disabled={loading}
-              >
-                {loading ? 'Searching...' : 'Search'}
-              </button>
-            </form>
+      {/* Student Data */}
+      {studentData && (
+        <div className="bg-white p-6 rounded-lg shadow-sm border border-neutral-200">
+          <h2 className="text-2xl font-bold text-neutral-900">
+            {studentData.name}
+          </h2>
 
-            {/* Error */}
-            {error && (
-              <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-md text-center">
-                {error}
-              </div>
-            )}
-
-            {/* Student Data */}
-            {studentData && (
-              <div className="bg-white p-6 rounded-lg shadow-md">
-                <h2 className="text-2xl font-bold text-gray-900">
-                  {studentData.name}
-                </h2>
-
-                <div className="grid grid-cols-2 gap-4 mt-4 text-gray-700">
-                  <p>
-                    <strong>PRN:</strong> {prn}
-                  </p>
-                  <p>
-                    <strong>Branch:</strong> {renderCell(studentData.branch)}
-                  </p>
-                  <p className="col-span-2">
-                    <strong>Overall Result:</strong>
-                    <span className="font-bold ml-2 px-3 py-1 text-sm rounded-full bg-blue-100 text-blue-800">
-                      {renderCell(studentData.result)}
-                    </span>
-                  </p>
-                </div>
-
-                {/* Marks Table */}
-                <div className="overflow-x-auto mt-6">
-                  <table className="min-w-full bg-white border border-gray-200">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Course Code
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          ISE
-                        </th>
-                        {showESE && (
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            ESE
-                          </th>
-                        )}
-                        {showMK && (
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            MK
-                          </th>
-                        )}
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Total Marks
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Credits
-                        </th>
-                      </tr>
-                    </thead>
-
-                    <tbody className="divide-y divide-gray-200">
-                      {validCourses.map((course, index) => {
-                        const iseVal = toNumber(course.ise);
-                        const eseVal = toNumber(course.ese);
-                        const mkVal = toNumber(course.mk);
-                        let total = mkVal > 0 ? iseVal + mkVal : iseVal + eseVal;
-                        total = Number(total.toFixed(2));
-
-                        return (
-                          <tr key={index} className="hover:bg-gray-50">
-                            <td className="px-4 py-4 whitespace-nowrap font-medium text-gray-800">
-                              {renderCell(course.course_code)}
-                            </td>
-                            <td className="px-4 py-4 whitespace-nowrap">
-                              {renderCell(course.ise)}
-                            </td>
-                            {showESE && (
-                              <td className="px-4 py-4 whitespace-nowrap">
-                                {renderCell(course.ese)}
-                              </td>
-                            )}
-                            {showMK && (
-                              <td className="px-4 py-4 whitespace-nowrap">
-                                {renderCell(course.mk)}
-                              </td>
-                            )}
-                            <td className="px-4 py-4 whitespace-nowrap font-semibold text-gray-900">
-                              {total > 0 ? total : ''}
-                            </td>
-                            <td className="px-4 py-4 whitespace-nowrap">
-                              {renderCell(course.credits)}
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
+          <div className="grid grid-cols-2 gap-4 mt-4 text-neutral-700">
+            <p>
+              <strong>PRN:</strong> {prn}
+            </p>
+            <p>
+              <strong>Branch:</strong> {renderCell(studentData.branch)}
+            </p>
+            <p className="col-span-2">
+              <strong>Overall Result:</strong>
+              <span className="font-bold ml-2 px-3 py-1 text-sm rounded-full bg-indigo-100 text-indigo-800">
+                {renderCell(studentData.result)}
+              </span>
+            </p>
           </div>
-        </main>
-      </div>
+
+          {/* Marks Table */}
+          <div className="overflow-x-auto mt-6">
+            <table className="min-w-full bg-white border border-neutral-200">
+              <thead className="bg-neutral-50">
+                <tr>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                    Course Code
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                    ISE
+                  </th>
+                  {showESE && (
+                    <th className="px-4 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                      ESE
+                    </th>
+                  )}
+                  {showMK && (
+                    <th className="px-4 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                      MK
+                    </th>
+                  )}
+                  <th className="px-4 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                    Total Marks
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                    Credits
+                  </th>
+                </tr>
+              </thead>
+
+              <tbody className="divide-y divide-neutral-200">
+                {validCourses.map((course, index) => {
+                  const iseVal = toNumber(course.ise);
+                  const eseVal = toNumber(course.ese);
+                  const mkVal = toNumber(course.mk);
+                  let total = mkVal > 0 ? iseVal + mkVal : iseVal + eseVal;
+                  total = Number(total.toFixed(2));
+
+                  return (
+                    <tr key={index} className="hover:bg-neutral-50">
+                      <td className="px-4 py-4 whitespace-nowrap font-medium text-neutral-800">
+                        {renderCell(course.course_code)}
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap">
+                        {renderCell(course.ise)}
+                      </td>
+                      {showESE && (
+                        <td className="px-4 py-4 whitespace-nowrap">
+                          {renderCell(course.ese)}
+                        </td>
+                      )}
+                      {showMK && (
+                        <td className="px-4 py-4 whitespace-nowrap">
+                          {renderCell(course.mk)}
+                        </td>
+                      )}
+                      <td className="px-4 py-4 whitespace-nowrap font-semibold text-neutral-900">
+                        {total > 0 ? total : ''}
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap">
+                        {renderCell(course.credits)}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

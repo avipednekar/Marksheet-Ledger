@@ -1,5 +1,4 @@
 // src/utils.ts
-
 import React from 'react';
 import { CheckCircle, XCircle, Clock } from 'lucide-react';
 
@@ -10,7 +9,8 @@ export const getStatusIcon = (status: string): React.ReactNode => {
     case 'FAIL':
       return <XCircle className="h-5 w-5 text-red-500" />;
     default:
-      return <Clock className="h-5 w-5 text-gray-500" />;
+      // --- FRESH LOOK: Updated default color to neutral ---
+      return <Clock className="h-5 w-5 text-neutral-500" />;
   }
 };
 
@@ -21,7 +21,8 @@ export const getStatusColor = (status: string): string => {
     case 'FAIL':
       return 'bg-red-100 text-red-800 border-red-200';
     default:
-      return 'bg-gray-100 text-gray-800 border-gray-200';
+      // --- FRESH LOOK: Updated default color to neutral ---
+      return 'bg-neutral-100 text-neutral-800 border-neutral-200';
   }
 };
 
@@ -30,16 +31,18 @@ export const getGradeColor = (grade: string): string => {
     case 'A+':
     case 'A':
       return 'text-green-600 bg-green-50';
+    // --- FRESH LOOK: Changed 'B' grades from blue to indigo to match theme ---
     case 'B+':
     case 'B':
-      return 'text-blue-600 bg-blue-50';
+      return 'text-indigo-600 bg-indigo-50';
     case 'C+':
     case 'C':
       return 'text-orange-600 bg-orange-50';
     case 'F':
       return 'text-red-600 bg-red-50';
     default:
-      return 'text-gray-600 bg-gray-50';
+      // --- FRESH LOOK: Updated default color to neutral ---
+      return 'text-neutral-600 bg-neutral-50';
   }
 };
 
