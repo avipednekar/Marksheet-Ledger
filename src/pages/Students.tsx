@@ -1,4 +1,3 @@
-// Students.tsx
 import React, { useState, useEffect } from 'react';
 import { Plus, Search, Filter, Edit3, Trash2, User, Mail, Phone, MapPin, Calendar, GraduationCap } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';

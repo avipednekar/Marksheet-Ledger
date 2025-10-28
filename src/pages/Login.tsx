@@ -1,4 +1,3 @@
-// Login.tsx
 import React, { useState } from 'react';
 import { GraduationCap, Mail, Lock, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -45,7 +44,6 @@ const Login: React.FC = () => {
           <h1 className="text-4xl font-bold text-center mb-3">College Marksheet</h1>
           <p className="text-lg text-indigo-100 text-center">Academic Management System</p>
 
-          {/* Decorative subtle floating shapes */}
           <div className="absolute -right-10 -bottom-6 w-44 h-44 bg-white/6 rounded-full filter blur-2xl animate-[subtleFloat_6s_ease-in-out_infinite]" />
           <div className="absolute left-6 -bottom-10 w-28 h-28 bg-white/4 rounded-full filter blur-xl" />
         </motion.div>

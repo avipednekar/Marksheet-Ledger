@@ -7,7 +7,7 @@ import { getMarkKey } from '../../helpers/Utils';
 interface EditResultModalProps {
   result: Result;
   onClose: () => void;
-  onSave: () => void; // To refresh the list and close the modal
+  onSave: () => void; 
 }
 
 const EditResultModal: React.FC<EditResultModalProps> = ({ result, onClose, onSave }) => {
@@ -22,7 +22,6 @@ const EditResultModal: React.FC<EditResultModalProps> = ({ result, onClose, onSa
       setLoading(true);
       setFormError('');
       try {
-        // Step 1: Fetch the subject configuration (with evaluation schemes)
         const params = new URLSearchParams({
           enrollmentNumber: result.enrollmentNumber,
           semester: result.semester.toString(),
@@ -36,14 +35,12 @@ const EditResultModal: React.FC<EditResultModalProps> = ({ result, onClose, onSa
           throw new Error(data.message || 'Could not load subject configurations to edit.');
         }
 
-        // Step 2: Map configs and populate with existing marks from the result object
         const populatedSubjects: SubjectConfig[] = data.subjects.map((config: SubjectConfig) => {
           const existingSubjectData = result.subjects[config.courseName];
           const marks: Record<string, number | ''> = {};
 
           config.evaluationScheme.forEach((scheme) => {
             const key = getMarkKey(scheme.name);
-            // Use existing mark (as number) if available, otherwise default to empty string
             const existingMark = existingSubjectData?.componentMarks[scheme.name];
             marks[key] = existingMark !== undefined ? existingMark : '';
           });
@@ -51,7 +48,7 @@ const EditResultModal: React.FC<EditResultModalProps> = ({ result, onClose, onSa
           return {
             ...config,
             ...marks
-          } as SubjectConfig; // Type assertion as dynamic keys are added
+          } as SubjectConfig; 
         });
 
         setSubjects(populatedSubjects);
@@ -68,7 +65,6 @@ const EditResultModal: React.FC<EditResultModalProps> = ({ result, onClose, onSa
 
   const handleMarkChange = (subjectIndex: number, key: string, value: string) => {
     const newSubjects = [...subjects];
-    // Cast to 'any' to allow dynamic key assignment
     (newSubjects[subjectIndex] as any)[key] = value;
     setSubjects(newSubjects);
   };
@@ -78,15 +74,13 @@ const EditResultModal: React.FC<EditResultModalProps> = ({ result, onClose, onSa
   setSaving(true);
   setFormError('');
 
-  // Build payload in flat format
   const subjectsPayload = subjects.reduce((acc, subject) => {
     const marks: Record<string, number> = {};
     subject.evaluationScheme.forEach((scheme: any) => {
       const key = getMarkKey(scheme.name);
-      // Convert to number, default to 0 if empty
       marks[key] = Number((subject as any)[key]) || 0;
     });
-    acc[subject.courseName] = marks; // ✅ no "componentMarks"
+    acc[subject.courseName] = marks;
     return acc;
   }, {} as Record<string, Record<string, number>>);
 
@@ -102,7 +96,7 @@ const EditResultModal: React.FC<EditResultModalProps> = ({ result, onClose, onSa
 
     const data = await response.json();
     if (data.success) {
-      onSave(); // Close modal and refresh list
+      onSave(); 
     } else {
       setFormError(data.message || 'Failed to update result.');
     }
@@ -112,7 +106,6 @@ const EditResultModal: React.FC<EditResultModalProps> = ({ result, onClose, onSa
     setSaving(false);
   }
 };
-
 
   return (
     <div className="fixed inset-0 backdrop-blur-sm bg-black/40 flex justify-center p-4 z-50">
@@ -137,10 +130,8 @@ const EditResultModal: React.FC<EditResultModalProps> = ({ result, onClose, onSa
                     <div key={subject.courseCode || subject.courseName} className="space-y-2 border p-3 rounded">
                       <p className="font-medium">{subject.courseName}</p>
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                        {/* Dynamically create inputs based on the scheme */}
                         {subject.evaluationScheme.map((scheme: any) => {
                           const key = getMarkKey(scheme.name);
-                          // Access the dynamic property on the subject object
                           const markValue = (subject as any)[key] || '';
                           return (
                             <input

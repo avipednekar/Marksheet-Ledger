@@ -1,4 +1,3 @@
-// LoadingSpinner.tsx
 import React from 'react';
 
 interface LoadingSpinnerProps {
@@ -18,7 +17,6 @@ const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({ size = 'md', className 
 
   return (
     <div className={`inline-flex items-center ${className}`}>
-      {/* Dual-ring spinner with subtle gradient sweep */}
       <svg className={`${s} animate-spin`} viewBox="0 0 50 50" aria-hidden>
         <defs>
           <linearGradient id="g1" x1="0" x2="1">
@@ -42,7 +40,6 @@ const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({ size = 'md', className 
 
 export default LoadingSpinner;
 
-/* Skeleton loader for content placeholders */
 export const SkeletonLoader: React.FC<{ lines?: number; className?: string }> = ({ lines = 3, className = '' }) => {
   return (
     <div className={`space-y-3 ${className}`}>

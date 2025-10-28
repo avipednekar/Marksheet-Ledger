@@ -1,5 +1,3 @@
-// src/interfaces.ts
-
 export interface Subject {
   componentMarks: Record<string, number>;
   total: number;
@@ -26,28 +24,23 @@ export interface Result {
   updatedAt: string;
 }
 
-// Interface for subject configuration retrieved for Add/Edit modals
 export interface SubjectConfig {
   courseName: string;
-  courseCode?: string; // Add/Edit uses courseCode in some parts
+  courseCode?: string; 
   evaluationScheme: {
     name: string;
     maxMarks: number;
     minPassingMarks: number;
   }[];
-  // Dynamic fields for component marks (e.g., 'ise', 'mse', 'ese') will be added temporarily
   [key: string]: any;
 }
 
-// Interface for student details received in Add/Batch Add modals
 export interface StudentDetails {
   name: string;
   department: string;
   enrollmentNumber: string;
-  // Add other necessary student fields
 }
 
-// Interface for the next slot data
 export interface NextResultSlot {
   yearOfStudy: number;
   semester: number;

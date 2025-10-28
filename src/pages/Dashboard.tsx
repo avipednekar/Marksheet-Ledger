@@ -1,4 +1,3 @@
-// Dashboard.tsx
 import React, { useState, useEffect } from 'react';
 import { 
   Users, 
@@ -96,43 +95,41 @@ const Dashboard: React.FC = () => {
       title: 'Total Students',
       value: stats?.overview.totalStudents || 0,
       icon: Users,
-      color: 'indigo', // Updated
+      color: 'indigo', 
       change: '+12%'
     },
     {
       title: 'Results Published',
       value: stats?.overview.totalResults || 0,
       icon: FileText,
-      color: 'violet', // Updated
+      color: 'violet', 
       change: '+8%'
     },
     {
       title: 'Pass Percentage',
       value: `${stats?.overview.passPercentage || 0}%`,
       icon: TrendingUp,
-      color: 'green', // Semantic
+      color: 'green', 
       change: '+5.2%'
     },
     {
       title: 'Pending Makeups',
       value: stats?.overview.pendingMakeups || 0,
       icon: AlertTriangle,
-      color: 'orange', // Semantic
+      color: 'orange', 
       change: '-3%'
     }
   ];
 
   const colorVariants = {
-    indigo: 'from-indigo-500 to-indigo-600', // Updated
-    violet: 'from-violet-500 to-violet-600', // Updated
+    indigo: 'from-indigo-500 to-indigo-600', 
+    violet: 'from-violet-500 to-violet-600', 
     green: 'from-green-500 to-green-600',
     orange: 'from-orange-500 to-orange-600'
   };
 
   return (
-    // Page container (inherits bg-neutral-100)
     <div className="space-y-6">
-      {/* Header */}
       <div className="bg-white rounded-lg shadow-sm border border-neutral-200 p-6">
         <div className="flex items-center justify-between">
           <div>
@@ -156,8 +153,7 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
       </div>
- 
-      {/* Statistics Cards */}
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {statCards.map((card, index) => {
           const Icon = card.icon;
@@ -183,9 +179,7 @@ const Dashboard: React.FC = () => {
         })}
       </div>
 
-      {/* Recent Activity & Quick Stats */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Recent Activity */}
         <div className="lg:col-span-2 bg-white rounded-lg shadow-sm border border-neutral-200">
           <div className="p-6 border-b border-neutral-200">
             <div className="flex items-center justify-between">
@@ -238,7 +232,6 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Year-wise Performance */}
         <div className="bg-white rounded-lg shadow-sm border border-neutral-200">
           <div className="p-6 border-b border-neutral-200">
             <h2 className="text-lg font-semibold text-neutral-900 flex items-center">
@@ -270,7 +263,6 @@ const Dashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Exam Type Statistics */}
       <div className="bg-white rounded-lg shadow-sm border border-neutral-200">
         <div className="p-6 border-b border-neutral-200">
           <h2 className="text-lg font-semibold text-neutral-900">Exam Type Performance</h2>

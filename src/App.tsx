@@ -1,4 +1,3 @@
-// App.tsx
 import React, { useState, Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import Navbar from './components/Navbar';
@@ -7,7 +6,6 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import LoadingSpinner, { SkeletonLoader } from './components/LoadingSpinner';
 import { AnimatePresence, motion } from 'framer-motion';
 
-// Lazy-load pages
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Students = lazy(() => import('./pages/Students'));
 const Results = lazy(() => import('./pages/Results'));
@@ -95,7 +93,6 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
 
   return (
     <AppLayout>
-      {/* Use a skeleton card while the protected page is still lazy-loading */}
       <Suspense fallback={<PageSkeletonCard />}>
         {children}
       </Suspense>

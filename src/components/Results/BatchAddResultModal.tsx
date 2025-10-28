@@ -1,5 +1,3 @@
-// src/components/BatchAddResultModal.tsx
-
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { getMarkKey } from '../../helpers/Utils';
@@ -13,13 +11,11 @@ interface BatchAddResultModalProps {
 interface StudentInList {
   name: string;
   enrollmentNumber: string;
-  // Include department/year if the filter doesn't capture it entirely
 }
 
 interface SelectedStudentData extends StudentDetails {
   nextSlot: NextResultSlot;
 }
-
 
 const BatchAddResultModal: React.FC<BatchAddResultModalProps> = ({ onClose, onAdd }) => {
   const { token } = useAuth();
@@ -56,7 +52,6 @@ const BatchAddResultModal: React.FC<BatchAddResultModalProps> = ({ onClose, onAd
   const fetchSubjects = async (student: StudentInList) => {
     setErrorMessage("");
     try {
-      // 1. Get academic status (for next result slot details)
       const statusResponse = await fetch(`/api/students/${student.enrollmentNumber}/academic-status`, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -68,7 +63,6 @@ const BatchAddResultModal: React.FC<BatchAddResultModalProps> = ({ onClose, onAd
       
       if (!nextSlot) throw new Error(`${studentDetails.name} has no determined next result slot.`);
 
-      // 2. Fetch subjects for nextSlot
       const params = new URLSearchParams({
         enrollmentNumber: student.enrollmentNumber,
         semester: nextSlot.semester.toString(),
@@ -88,7 +82,6 @@ const BatchAddResultModal: React.FC<BatchAddResultModalProps> = ({ onClose, onAd
         return { ...s, ...initialMarks };
       });
 
-      // Add MDM for sem >= 3
       if (nextSlot.semester >= 3) {
         loadedSubjects.push({
           courseName: "MDM",
@@ -96,7 +89,6 @@ const BatchAddResultModal: React.FC<BatchAddResultModalProps> = ({ onClose, onAd
           ese: ""
         } as SubjectConfig);
       }
-      // Add Program + Open Electives for sem >= 5
       if (nextSlot.semester >= 5) {
         loadedSubjects.push(
           { courseName: "Program Elective", evaluationScheme: [{ name: "ESE", maxMarks: 100, minPassingMarks: 40 }], ese: "" } as SubjectConfig,
@@ -111,7 +103,6 @@ const BatchAddResultModal: React.FC<BatchAddResultModalProps> = ({ onClose, onAd
       setErrorMessage(err.message);
     }
   };
-
 
   const handleSubjectChange = (index: number, field: string, value: string) => {
     const updated = [...subjects];
@@ -133,7 +124,7 @@ const BatchAddResultModal: React.FC<BatchAddResultModalProps> = ({ onClose, onAd
           const marksPayload: Record<string, number> = {};
           subject.evaluationScheme.forEach((scheme: any) => {
             const key = getMarkKey(scheme.name);
-            marksPayload[scheme.name] = Number((subject as any)[key]) || 0; // Use original scheme name as key
+            marksPayload[scheme.name] = Number((subject as any)[key]) || 0; 
           });
           acc[subject.courseName] = { componentMarks: marksPayload };
         }
@@ -145,8 +136,6 @@ const BatchAddResultModal: React.FC<BatchAddResultModalProps> = ({ onClose, onAd
       await onAdd(resultData);
       setSelectedStudent(null);
       setSubjects([]);
-      // Refresh the list of students to remove the one just added for
-      // better UX, assuming successful save means their next slot changes.
       await fetchFilteredStudents(); 
 
     } catch (err: any) {
@@ -166,7 +155,6 @@ const BatchAddResultModal: React.FC<BatchAddResultModalProps> = ({ onClose, onAd
         </div>
 
         <div className="p-6 space-y-4">
-          {/* Filter Section */}
           <div className="grid grid-cols-2 gap-4">
             <select
               value={filters.department}
@@ -199,10 +187,8 @@ const BatchAddResultModal: React.FC<BatchAddResultModalProps> = ({ onClose, onAd
             {loadingStudents ? "Searching..." : "Search Students"}
           </button>
 
-          {/* Error */}
           {errorMessage && <div className="p-3 bg-red-100 text-red-700 rounded">{errorMessage}</div>}
 
-          {/* Student List */}
           {studentsList.length > 0 && !selectedStudent && (
             <div className="mt-4">
               <h3 className="font-semibold mb-2">Select a Student ({studentsList.length} Found)</h3>
@@ -221,7 +207,6 @@ const BatchAddResultModal: React.FC<BatchAddResultModalProps> = ({ onClose, onAd
             </div>
           )}
 
-          {/* Subject Entry */}
           {selectedStudent && (
             <div className="space-y-4 mt-4">
               <div className="bg-gray-50 p-4 rounded text-sm">

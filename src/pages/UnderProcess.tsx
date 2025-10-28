@@ -3,23 +3,21 @@ import React from 'react';
 const AnimatedProcessingIcon = () => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
-    width="60" // Larger icon size
+    width="60" 
     height="60"
     viewBox="0 0 24 24"
     fill="none"
     stroke="currentColor"
-    strokeWidth="1.5" // Slightly thinner stroke for elegance
+    strokeWidth="1.5" 
     strokeLinecap="round"
     strokeLinejoin="round"
     className="text-blue-500 dark:text-blue-400"
   >
-    {/* Hourglass top */}
     <path d="M5 22h14" />
     <path d="M5 2h14" />
     <path d="M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22" />
     <path d="M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2" />
 
-    {/* Fluid animation within the hourglass */}
     <g>
       <path
         d="M12 12 L17 17.828 L17 6.172 Z"
@@ -28,7 +26,7 @@ const AnimatedProcessingIcon = () => (
         style={
           {
             animationDelay: '0s',
-            '--tw-fill-color': 'rgb(59 130 246 / var(--tw-bg-opacity))', // Blue-500
+            '--tw-fill-color': 'rgb(59 130 246 / var(--tw-bg-opacity))', 
           } as React.CSSProperties
         }
       />
@@ -39,7 +37,7 @@ const AnimatedProcessingIcon = () => (
         style={
           {
             animationDelay: '0s',
-            '--tw-fill-color': 'rgb(59 130 246 / var(--tw-bg-opacity))', // Blue-500
+            '--tw-fill-color': 'rgb(59 130 246 / var(--tw-bg-opacity))', 
           } as React.CSSProperties
         }
       />
@@ -83,20 +81,16 @@ function UnderProcess() {
 
 
       <div className="flex flex-col items-center justify-center p-8 sm:p-10 bg-white dark:bg-gray-800 rounded-3xl shadow-2xl space-y-5 w-full max-w-sm text-center animate-pulse-once border border-blue-200 dark:border-blue-700">
-        {/* Animated Processing Icon (Hourglass) */}
         <AnimatedProcessingIcon />
 
-        {/* Updated "Under Development" message */}
         <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 dark:text-gray-50 drop-shadow-sm">
           Module Under Development
         </h1>
 
-        {/* Updated descriptive text for development phase */}
         <p className="text-gray-600 dark:text-gray-300 text-lg sm:text-xl leading-relaxed">
           We're hard at work building this feature! Please check back later for updates.
         </p>
 
-        {/* The subtle loading bar still works to show something is happening behind the scenes */}
         <div className="w-full bg-blue-100 rounded-full h-3 dark:bg-blue-900 overflow-hidden">
           <div
             className="bg-gradient-to-r from-blue-400 to-purple-500 h-full rounded-full animate-[progress-bar_2s_ease-in-out_infinite] w-[30%]"

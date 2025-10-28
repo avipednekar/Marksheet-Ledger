@@ -1,4 +1,3 @@
-// Navbar.tsx
 import React from 'react';
 import { Menu, User, LogOut, Bell, ScrollText } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';

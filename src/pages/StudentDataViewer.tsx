@@ -1,9 +1,5 @@
-// StudentDataViewer.tsx
 import React, { useState } from 'react';
 
-// --- REMOVED Navbar and Sidebar imports ---
-
-// Define data interfaces
 interface Course {
   course_code: string;
   ise?: string | number;
@@ -20,7 +16,6 @@ interface StudentData {
 }
 
 const StudentDataViewer: React.FC = () => {
-  // --- REMOVED isSidebarOpen state ---
   const [prn, setPrn] = useState<string>('');
   const [branch, setBranch] = useState<'FY' | 'CSE'>('FY');
   const [studentData, setStudentData] = useState<StudentData | null>(null);
@@ -75,7 +70,6 @@ const StudentDataViewer: React.FC = () => {
     return Number(val);
   };
 
-  // Detect columns
   const showESE =
     studentData?.marks?.some(
       (course) => course.ese !== undefined && course.ese !== 'N/A'
@@ -86,12 +80,10 @@ const StudentDataViewer: React.FC = () => {
       (course) => course.mk !== undefined && course.mk !== 'N/A'
     ) ?? false;
 
-  // Filter: valid courses with marks and exclude summary rows
   const validCourses =
     studentData?.marks?.filter((course) => {
       const code = (course.course_code || '').toString().toUpperCase();
 
-      // Exclude summary/total rows
       const isSummary =
         code.includes('CRDT') ||
         code.includes('CUML') ||
@@ -102,7 +94,6 @@ const StudentDataViewer: React.FC = () => {
 
       if (isSummary) return false;
 
-      // Must have at least one valid mark
       const hasISE = course.ise && course.ise !== 'N/A' && !Number.isNaN(course.ise);
       const hasESE = course.ese && course.ese !== 'N/A' && !Number.isNaN(course.ese);
       const hasMK = course.mk && course.mk !== 'N/A' && !Number.isNaN(course.mk);
@@ -111,14 +102,11 @@ const StudentDataViewer: React.FC = () => {
     }) ?? [];
 
   return (
-    // --- REMOVED main layout wrappers ---
-    // This div will now render inside App.tsx's <main> element
     <div className="max-w-5xl mx-auto">
       <h1 className="text-3xl font-bold text-center text-neutral-900 mb-6">
         Student Result Viewer
       </h1>
 
-      {/* Search Form */}
       <form
         onSubmit={handleSearch}
         className="flex flex-col sm:flex-row gap-4 mb-8"
@@ -149,14 +137,12 @@ const StudentDataViewer: React.FC = () => {
         </button>
       </form>
 
-      {/* Error */}
       {error && (
         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg text-center">
           {error}
         </div>
       )}
 
-      {/* Student Data */}
       {studentData && (
         <div className="bg-white p-6 rounded-lg shadow-sm border border-neutral-200">
           <h2 className="text-2xl font-bold text-neutral-900">
@@ -178,7 +164,6 @@ const StudentDataViewer: React.FC = () => {
             </p>
           </div>
 
-          {/* Marks Table */}
           <div className="overflow-x-auto mt-6">
             <table className="min-w-full bg-white border border-neutral-200">
               <thead className="bg-neutral-50">

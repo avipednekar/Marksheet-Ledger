@@ -1,5 +1,3 @@
-// src/components/AddResultModal.tsx
-
 import React, { useState, useEffect } from 'react';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import { useAuth } from '../../context/AuthContext';
@@ -53,7 +51,7 @@ const AddResultModal: React.FC<AddResultModalProps> = ({ onClose, onAdd }) => {
           const params = new URLSearchParams({
             enrollmentNumber: enrollmentId,
             semester: nextSlot.semester.toString(),
-            year: nextSlot.yearOfStudy.toString() // Assuming yearOfStudy is a number and needs to be stringified
+            year: nextSlot.yearOfStudy.toString() 
           });
           const response = await fetch(`/api/subjects?${params}`, {
             headers: { 'Authorization': `Bearer ${token}` }
@@ -65,7 +63,6 @@ const AddResultModal: React.FC<AddResultModalProps> = ({ onClose, onAdd }) => {
           }
 
           let loadedSubjects: SubjectConfig[] = data.subjects.map((s: SubjectConfig) => {
-            // Initialize mark fields to empty string
             const initialMarks: Record<string, string> = {};
             s.evaluationScheme.forEach(scheme => {
               initialMarks[getMarkKey(scheme.name)] = '';
@@ -73,7 +70,6 @@ const AddResultModal: React.FC<AddResultModalProps> = ({ onClose, onAdd }) => {
             return { ...s, ...initialMarks };
           });
 
-          // Add MDM for sem >= 3
           if (nextSlot.semester >= 3) {
             loadedSubjects.push({
               courseName: "MDM",
@@ -82,7 +78,6 @@ const AddResultModal: React.FC<AddResultModalProps> = ({ onClose, onAdd }) => {
             } as SubjectConfig);
           }
 
-          // Add Program + Open Electives for sem >= 5
           if (nextSlot.semester >= 5) {
             loadedSubjects.push(
               {
@@ -111,7 +106,6 @@ const AddResultModal: React.FC<AddResultModalProps> = ({ onClose, onAdd }) => {
 
   const handleSubjectChange = (index: number, field: string, value: string) => {
     const newSubjects = [...subjects];
-    // Ensure the field is treated as a string key on the SubjectConfig
     (newSubjects[index] as any)[field] = value;
     setSubjects(newSubjects);
   };
@@ -124,20 +118,18 @@ const AddResultModal: React.FC<AddResultModalProps> = ({ onClose, onAdd }) => {
     const resultData = {
       enrollmentNumber: enrollmentId,
       ...nextSlot,
-      examType: 'ESE', // Assuming ESE is the default type for the added result
+      examType: 'ESE', 
       subjects: subjects.reduce((acc, subject) => {
         if (subject.courseName) {
           const marksPayload: Record<string, number> = {};
           subject.evaluationScheme.forEach((scheme) => {
             const key = getMarkKey(scheme.name);
-            // Use Number() to convert the string mark to number, defaulting to 0
-            marksPayload[scheme.name] = Number((subject as any)[key]) || 0; // Use original scheme name as key in componentMarks
+            marksPayload[scheme.name] = Number((subject as any)[key]) || 0; 
           });
           acc[subject.courseName] = { componentMarks: marksPayload };
         }
         return acc;
       }, {} as Record<string, { componentMarks: Record<string, number> }>),
-      // The API will calculate total, percentage, grade, and status on the server-side
     };
 
     try {
@@ -186,7 +178,6 @@ const AddResultModal: React.FC<AddResultModalProps> = ({ onClose, onAdd }) => {
                           <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                             {subject.evaluationScheme.map((scheme: any) => {
                               const key = getMarkKey(scheme.name);
-                              // Access the dynamic property on the subject object
                               const markValue = (subject as any)[key] || '';
                               return (
                                 <input

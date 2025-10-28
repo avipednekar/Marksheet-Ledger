@@ -1,5 +1,3 @@
-// src/components/ViewResultModal.tsx
-
 import React from 'react';
 import { Download } from 'lucide-react';
 import { Result } from '../../helpers/interfaces';
@@ -18,7 +16,6 @@ const ViewResultModal: React.FC<ViewResultModalProps> = ({ result, onClose }) =>
         <button onClick={onClose} className="text-gray-400 hover:text-gray-600 p-1 rounded">✕</button>
       </div>
       <div className="p-6 space-y-6">
-        {/* Student Info Panel */}
         <div className="bg-gray-50 rounded-lg p-4">
           <h3 className="font-semibold text-gray-900 mb-3">Student Information</h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
@@ -29,7 +26,6 @@ const ViewResultModal: React.FC<ViewResultModalProps> = ({ result, onClose }) =>
           </div>
         </div>
 
-        {/* Dynamic Subject Performance Table */}
         <div>
           <h3 className="font-semibold text-gray-900 mb-3">Subject-wise Performance</h3>
           <div className="overflow-x-auto">
@@ -49,7 +45,6 @@ const ViewResultModal: React.FC<ViewResultModalProps> = ({ result, onClose }) =>
                     <td className="px-4 py-3 text-sm font-medium text-gray-900">{subjectName}</td>
                     <td className="px-4 py-3">
                       <div className="flex flex-wrap gap-2">
-                        {/* Dynamically list all component marks */}
                         {Object.entries(data.componentMarks).map(([compName, compMark]) => (
                           <span key={compName} className="text-xs px-2 py-1 bg-gray-100 text-gray-800 rounded">
                             {compName}: <span className="font-semibold">{compMark}</span>

@@ -1,8 +1,5 @@
-// AuthContext.tsx
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
-// --- NEW: Use environment variable for the API URL ---
 const API_URL = 'http://localhost:5000/api';
 
 interface Teacher {
@@ -14,7 +11,7 @@ interface Teacher {
 
 interface AuthContextType {
   teacher: Teacher | null;
-  token: string | null; // This is the in-memory accessToken
+  token: string | null; 
   login: (email: string, password: string) => Promise<{ success: boolean; message: string }>;
   logout: () => void;
   loading: boolean;
@@ -30,10 +27,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   useEffect(() => {
     const refreshAndVerify = async () => {
       try {
-        // --- REFACTORED to use fetch ---
         const refreshResponse = await fetch(`${API_URL}/auth/refresh`, {
           method: 'POST',
-          credentials: 'include', // Crucial: sends cookies with the request
+          credentials: 'include',
         });
 
         if (!refreshResponse.ok) throw new Error('Refresh failed');
@@ -42,7 +38,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         const newAccessToken = refreshData.accessToken;
         setToken(newAccessToken);
 
-        // --- REFACTORED to use fetch ---
         const verifyResponse = await fetch(`${API_URL}/auth/verify`, {
           credentials: 'include',
           headers: { 'Authorization': `Bearer ${newAccessToken}` }
@@ -66,7 +61,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const login = async (email: string, password: string): Promise<{ success: boolean; message: string }> => {
     try {
-      // --- REFACTORED to use fetch ---
       const response = await fetch(`${API_URL}/auth/login`, {
         method: 'POST',
         credentials: 'include',
@@ -92,7 +86,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const logout = async () => {
     const currentToken = token; 
     try {
-      // --- REFACTORED to use fetch ---
       await fetch(`${API_URL}/auth/logout`, {
         method: 'POST',
         credentials: 'include',

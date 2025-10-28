@@ -1,5 +1,3 @@
-// src/components/ResultCard.tsx
-
 import React from 'react';
 import { Eye, Edit3, AlertTriangle } from 'lucide-react';
 import { Result } from '../../helpers/interfaces';

@@ -1,4 +1,3 @@
-// src/utils.ts
 import React from 'react';
 import { CheckCircle, XCircle, Clock } from 'lucide-react';
 
@@ -9,7 +8,6 @@ export const getStatusIcon = (status: string): React.ReactNode => {
     case 'FAIL':
       return <XCircle className="h-5 w-5 text-red-500" />;
     default:
-      // --- FRESH LOOK: Updated default color to neutral ---
       return <Clock className="h-5 w-5 text-neutral-500" />;
   }
 };
@@ -21,7 +19,6 @@ export const getStatusColor = (status: string): string => {
     case 'FAIL':
       return 'bg-red-100 text-red-800 border-red-200';
     default:
-      // --- FRESH LOOK: Updated default color to neutral ---
       return 'bg-neutral-100 text-neutral-800 border-neutral-200';
   }
 };
@@ -31,7 +28,6 @@ export const getGradeColor = (grade: string): string => {
     case 'A+':
     case 'A':
       return 'text-green-600 bg-green-50';
-    // --- FRESH LOOK: Changed 'B' grades from blue to indigo to match theme ---
     case 'B+':
     case 'B':
       return 'text-indigo-600 bg-indigo-50';
@@ -41,12 +37,10 @@ export const getGradeColor = (grade: string): string => {
     case 'F':
       return 'text-red-600 bg-red-50';
     default:
-      // --- FRESH LOOK: Updated default color to neutral ---
       return 'text-neutral-600 bg-neutral-50';
   }
 };
 
-// Converts evaluation scheme name (e.g., "ESE") to a simple lowercase key (e.g., "ese")
 export const getMarkKey = (schemeName: string): string => {
   return schemeName.toLowerCase().replace(/[^a-z]/g, '');
 };

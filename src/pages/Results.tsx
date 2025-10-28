@@ -1,4 +1,3 @@
-// Results.tsx
 import React, { useState, useEffect } from 'react';
 import {
   Plus, Search, Filter, FileText, Download
@@ -6,10 +5,8 @@ import {
 import { useAuth } from '../context/AuthContext';
 import LoadingSpinner from '../components/LoadingSpinner';
 
-// Import interfaces
 import { Result } from '../helpers/interfaces';
 
-// Import separated components
 import ResultCard from '../components/Results/ResultCard';
 import ViewResultModal from '../components/Results/ViewResultModal';
 import AddResultModal from '../components/Results/AddResultModal';
@@ -34,7 +31,6 @@ const Results: React.FC = () => {
 
   useEffect(() => {
     fetchResults();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token, searchTerm, yearFilter, examTypeFilter, statusFilter, academicYearFilter, semesterFilter]);
 
   const fetchResults = async () => {
@@ -43,7 +39,7 @@ const Results: React.FC = () => {
       setError('');
 
       const params = new URLSearchParams();
-      if (searchTerm) params.append('search', searchTerm); // Server-side search
+      if (searchTerm) params.append('search', searchTerm); 
       if (yearFilter) params.append('yearOfStudy', yearFilter);
       if (examTypeFilter) params.append('examType', examTypeFilter);
       if (statusFilter) params.append('status', statusFilter);
@@ -85,7 +81,7 @@ const Results: React.FC = () => {
       });
       const data = await response.json();
       if (data.success) {
-        fetchResults(); // Refresh the list
+        fetchResults();
         setShowAddModal(false);
         setShowBatchAddModal(false);
         alert('Result added successfully!');
@@ -94,13 +90,12 @@ const Results: React.FC = () => {
       }
     } catch (err: any) {
       alert(`Error: ${err.message || 'Failed to add result'}`);
-      throw err; // Re-throw to be caught by the modal
+      throw err;
     }
   };
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-neutral-900">Results Management</h1>
@@ -124,7 +119,6 @@ const Results: React.FC = () => {
           </button>
         </div>
       </div>
-      {/* Filters */}
       <div className="bg-white rounded-lg shadow-sm border border-neutral-200 p-6">
         <div className="flex items-center space-x-2 mb-4">
           <Filter className="h-5 w-5 text-neutral-400" />
@@ -218,14 +212,12 @@ const Results: React.FC = () => {
           </div>
         </div>
       </div>
-      {/* Error Message */}
       {error && (
         <div className="bg-red-50 border border-red-200 rounded-lg p-4">
           <p className="text-red-800 font-medium">{error}</p>
         </div>
       )}
 
-      {/* Results List */}
       <div className="bg-white rounded-lg shadow-sm border border-neutral-200">
         <div className="p-6 border-b border-neutral-200">
           <div className="flex items-center justify-between">
@@ -288,7 +280,6 @@ const Results: React.FC = () => {
           )}
         </div>
       </div>
-      {/* View Result Modal */}
       {viewingResult && (
         <ViewResultModal
           result={viewingResult}
@@ -296,7 +287,6 @@ const Results: React.FC = () => {
         />
       )}
 
-      {/* Add Result Modal */}
       {showAddModal && (
         <AddResultModal
           onClose={() => setShowAddModal(false)}
@@ -317,7 +307,7 @@ const Results: React.FC = () => {
           onClose={() => setEditingResult(null)}
           onSave={() => {
             setEditingResult(null);
-            fetchResults(); // Refresh data after a successful save
+            fetchResults(); 
           }}
         />
       )}
