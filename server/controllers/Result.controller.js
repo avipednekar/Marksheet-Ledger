@@ -19,10 +19,8 @@ const processResultData = (student, yearOfStudy, semester, subjects, extraSubjec
   let grandTotalMaxMarks = 0; 
   const failedSubjects = [];
 
-  // Core subjects data based on student's curriculum
   const subjectsData = getSubjectsForStudent(student, semester, yearOfStudy) || [];
 
-  // Merge in electives / MDM (if passed separately)
   const mergedSubjectsData = [...subjectsData, ...extraSubjects];
   const courseMap = new Map(mergedSubjectsData.map(course => [course.courseName, course]));
 
@@ -31,7 +29,7 @@ const processResultData = (student, yearOfStudy, semester, subjects, extraSubjec
 
     if (!subjectConfig) {
       console.warn(`⚠ Subject '${subjectName}' not found in course map (likely elective/MDM).`);
-      continue; // Skip subjects not configured in the curriculum
+      continue; 
     }
 
     let totalMarks = 0;
@@ -40,13 +38,13 @@ const processResultData = (student, yearOfStudy, semester, subjects, extraSubjec
     const componentMarks = new Map();
 
     subjectConfig.evaluationScheme.forEach(scheme => {
-      // Normalize key for input matching (e.g., 'internalAssessment' -> 'internalassessment')
+      
       const key = scheme.name.toLowerCase().replace(/[^a-z]/g, '');
       const studentMark = Number(marks[key]) || 0;
 
       subjectMaxMarks += scheme.maxMarks;
 
-      // Check for component-level passing marks
+      
       if (studentMark < (scheme.minPassingMarks || 0)) {
         isPassing = false;
       }
@@ -55,7 +53,7 @@ const processResultData = (student, yearOfStudy, semester, subjects, extraSubjec
       componentMarks.set(scheme.name, studentMark);
     });
 
-    // Check for overall subject passing marks
+    
     if (totalMarks < subjectConfig.minForPassing) {
       isPassing = false;
     }
@@ -66,11 +64,11 @@ const processResultData = (student, yearOfStudy, semester, subjects, extraSubjec
     if (status === 'FAIL') failedSubjects.push(subjectName);
 
     processedSubjects.set(subjectName, {
-      componentMarks: Object.fromEntries(componentMarks), // Convert map to plain object for schema
+      componentMarks: Object.fromEntries(componentMarks), 
       total: totalMarks,
       grade,
       status,
-      maxMarks: subjectMaxMarks // Include max marks for better context
+      maxMarks: subjectMaxMarks 
     });
 
     grandTotalMarks += totalMarks;
@@ -100,13 +98,12 @@ export const createResult = async (req, res) => {
       return res.status(404).json({ success: false, message: `Student with enrollment '${enrollmentNumber}' not found` });
     }
     
-    // Check if a result already exists to prevent duplicates for the given semester
+    
     const existingResult = await Result.findOne({ studentId: student._id, semester: parseInt(semester) });
     if (existingResult) {
         return res.status(409).json({ success: false, message: `Result for semester ${semester} already exists for this student.` });
     }
 
-    // Use the centralized processing function with the student object
     const calculatedData = processResultData(student, yearOfStudy, semester, subjects);
 
     const result = new Result({
@@ -134,14 +131,14 @@ export const getAllResults = async (req, res) => {
 
     const pipeline = [];
 
-    // 1. Join with Student collection
+    
     pipeline.push({
       $lookup: { from: 'students', localField: 'studentId', foreignField: '_id', as: 'studentInfo' }
     }, {
       $unwind: '$studentInfo'
     });
 
-    // 2. Build Match Stage for filtering/searching
+    
     const matchStage = {};
     if (yearOfStudy) matchStage.yearOfStudy = parseInt(yearOfStudy);
     if (academicYear) matchStage.academicYear = academicYear;
@@ -160,17 +157,17 @@ export const getAllResults = async (req, res) => {
       pipeline.push({ $match: matchStage });
     }
 
-    // 3. Count total documents before pagination
+    
     const total = await Result.aggregate([...pipeline, { $count: 'total' }]);
     const totalResults = total.length > 0 ? total[0].total : 0;
     const totalPages = Math.ceil(totalResults / parseInt(limit));
 
-    // 4. Sorting and Pagination
+    
     pipeline.push({ $sort: { createdAt: -1 } });
     pipeline.push({ $skip: (parseInt(page) - 1) * parseInt(limit) });
     pipeline.push({ $limit: parseInt(limit) });
 
-    // 5. Projection
+    
     pipeline.push({
       $project: {
         _id: 0,
@@ -247,7 +244,7 @@ export const getResultDetails = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Result not found' });
     }
 
-    // Format output to include student name and enrollment number directly
+    
     const formattedResult = {
         ...result.toObject(),
         studentName: result.studentId?.name || 'Unknown',
@@ -280,20 +277,20 @@ export const updateResult = async (req, res) => {
             return res.status(404).json({ success: false, message: 'Student not found for the given result.' });
         }
 
-        // Recalculate all marks, grades, and status based on the new subjects data
+        
         const updateData = processResultData(student, resultToUpdate.yearOfStudy, resultToUpdate.semester, subjects);
 
         const updatedResult = await Result.findByIdAndUpdate(id, updateData, {
-            new: true, // Return the updated document
+            new: true, 
             runValidators: true,
         }).populate('studentId', 'name enrollmentNumber');
 
         if (!updatedResult) {
-            // Should theoretically not happen if resultToUpdate passed, but good for safety
+            
             return res.status(404).json({ success: false, message: 'Result not found after update attempt.' });
         }
         
-        // Format output
+        
         const formattedResult = {
             ...updatedResult.toObject(),
             studentName: updatedResult.studentId?.name || 'Unknown',

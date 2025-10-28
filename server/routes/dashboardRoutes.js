@@ -5,17 +5,14 @@ import { authenticateToken } from '../middleware/auth.js';
 
 const router = express.Router();
 
-// Get dashboard statistics using MongoDB Aggregation
 router.get('/stats', authenticateToken, async (req, res) => {
   try {
-    // Overview Stats
     const totalStudents = await Student.countDocuments();
     const totalResults = await Result.countDocuments();
     const passedResults = await Result.countDocuments({ overallStatus: 'PASS' });
     const pendingMakeups = await Result.countDocuments({ 'makeupRequired.0': { $exists: true } });
     const passPercentage = totalResults > 0 ? (passedResults / totalResults) * 100 : 0;
 
-    // Recent Activity
     const recentActivity = await Result.find()
       .populate('studentId', 'name')
       .sort({ createdAt: -1 })
@@ -29,7 +26,6 @@ router.get('/stats', authenticateToken, async (req, res) => {
           createdAt: r.createdAt
       })));
 
-    // Department-wise Stats using Aggregation
     const departmentStats = await Student.aggregate([
         {
             $lookup: {
@@ -64,7 +60,6 @@ router.get('/stats', authenticateToken, async (req, res) => {
     }, {}));
 
 
-    // Year-wise Stats
     const yearStats = await Result.aggregate([
         {
             $group: {
@@ -103,7 +98,6 @@ router.get('/stats', authenticateToken, async (req, res) => {
         return finalStats;
     });
 
-    // Exam Type Stats
     const examTypeStats = await Result.aggregate([
         {
             $group: {
@@ -153,7 +147,5 @@ router.get('/stats', authenticateToken, async (req, res) => {
     res.status(500).json({ success: false, message: 'Error fetching dashboard statistics' });
   }
 });
-
-// ... (trends route can be similarly refactored using aggregation)
 
 export default router;

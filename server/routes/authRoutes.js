@@ -9,7 +9,6 @@ const router = express.Router();
 
 router.route("/register").post(registerTeacher);
 
-// ## Login route (Updated for Cookies)
 router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -23,11 +22,10 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ success: false, message: 'Invalid credentials' });
     }
 
-    // --- CHANGED: Access token is now short-lived ---
     const accessToken = jwt.sign(
       { id: teacher._id, email: teacher.email, fullName: teacher.fullName },
       process.env.JWT_SECRET,
-      { expiresIn: '24h' } // 15 minutes is a standard, secure lifespan
+      { expiresIn: '24h' } 
     );
 
     const refreshToken = jwt.sign(
@@ -51,11 +49,10 @@ router.post('/login', async (req, res) => {
       sameSite: 'strict' 
     });
 
-    // --- CHANGED: Do NOT send the refresh token in the response body ---
     res.json({
       success: true,
       message: 'Login successful',
-      accessToken, // Client only receives the access token
+      accessToken, 
       teacher: {
         id: teacher._id,
         fullName: teacher.fullName,
@@ -68,7 +65,6 @@ router.post('/login', async (req, res) => {
   }
 });
 
-// ## Refresh route (Updated for Cookies)
 router.post('/refresh', async (req, res) => {
   const refreshToken = req.cookies.refreshToken;
 
@@ -90,7 +86,7 @@ router.post('/refresh', async (req, res) => {
       const accessToken = jwt.sign(
         { id: teacher._id, email: teacher.email, fullName: teacher.fullName },
         process.env.JWT_SECRET,
-        { expiresIn: '24h' } // Should also be short-lived
+        { expiresIn: '24h' } 
       );
 
       res.json({ success: true, accessToken });
@@ -100,7 +96,6 @@ router.post('/refresh', async (req, res) => {
   }
 });
 
-// ## Logout route (Updated for Cookies)
 router.post('/logout', authenticateToken, async (req, res) => {
   try {
     const teacher = req.teacher;
@@ -119,7 +114,6 @@ router.post('/logout', authenticateToken, async (req, res) => {
   }
 });
 
-// This route remains unchanged
 router.get('/verify', authenticateToken, (req, res) => {
   res.json({
     success: true,

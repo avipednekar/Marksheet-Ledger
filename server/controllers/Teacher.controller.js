@@ -1,10 +1,9 @@
-import { errorHandler } from "../middleware/errorHandler.js";
 import Teacher from "../models/Teacher/Teacher.model.js";
 
 const registerTeacher = async (req,res)=>{
     const {fullName, email, password, department}=req.body;
 
-    // console.log("Body: ",req.body);
+    
     if(fullName===""){
         res.status(401).json({
             message:"Fullname required"

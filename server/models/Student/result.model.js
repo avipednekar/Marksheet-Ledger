@@ -10,7 +10,7 @@ const subjectSchema = new mongoose.Schema({
     type: Number,
     required: true,
     min: 0,
-    max: 100, // Total marks are consistently out of 100
+    max: 100, 
   },
   grade: {
     type: String,

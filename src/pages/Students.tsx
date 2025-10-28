@@ -162,8 +162,8 @@ const Students: React.FC = () => {
     };
 
     return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-        <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-screen overflow-y-auto">
+      <div className="fixed inset-0 flex justify-center z-50 backdrop-blur-sm bg-black/40">
+        <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
           <form onSubmit={handleSubmit} className="flex flex-col h-full">
             <div className="p-6 border-b border-neutral-200"><h2 className="text-xl font-semibold text-neutral-900">{student ? 'Edit Student' : 'Add New Student'}</h2></div>
             <div className="p-6 space-y-4 overflow-y-auto">

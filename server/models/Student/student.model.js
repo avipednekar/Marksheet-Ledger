@@ -19,7 +19,6 @@ const studentSchema = new mongoose.Schema({
   address: String,
   dateOfBirth: Date,
 
-  // 🔹 Elective Tracking
   chosenMDM: { 
     type: String, 
     enum: ["Business Analytics", "IoT", "Smart Healthcare"], 

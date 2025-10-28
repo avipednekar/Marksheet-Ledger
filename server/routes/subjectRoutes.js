@@ -1,4 +1,3 @@
-// routes/subjectRoutes.js
 import express from 'express';
 import { getSubjectsForStudent } from '../utils/subjectHelper.js';
 import { authenticateToken } from '../middleware/auth.js';

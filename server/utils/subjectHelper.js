@@ -16,7 +16,6 @@ export function getSubjectsForStudent(student, semester,year) {
 
   const baseCurriculum = subjectMappings[year]?.[departmentOrGroupKey]?.[semester];
 
-  // If no base curriculum is found for the student's year/dept/sem combination, return empty.
   if (!baseCurriculum) {
     console.warn(`No curriculum found for year: ${year}, key: ${departmentOrGroupKey}, semester: ${semester}`);
     return [];
@@ -24,7 +23,6 @@ export function getSubjectsForStudent(student, semester,year) {
   
   const finalSubjects = [];
 
-  // Find the student's choices for the current semester upfront.
   const chosenPE = student.chosenPE?.find(pe => pe.semester === semester);
   const chosenOE = student.chosenOE?.find(oe => oe.semester === semester);
   const chosenMDM = student.chosenMDM?.find(mdm => mdm.semester === semester);

@@ -37,7 +37,6 @@ router.get("/filter", authenticateToken, async (req, res) => {
   }
 });
 
-
 router.get("/add-multiple-dummy", async (req, res) => {
   try {
     let students = [];
@@ -53,7 +52,7 @@ router.get("/add-multiple-dummy", async (req, res) => {
         department: "Computer Science",
         admissionYear,
         admissionType: faker.helpers.arrayElement(["Regular", "DSY"]),
-        cgpa: parseFloat((Math.random() * 4 + 6).toFixed(2)), // 6.0 - 10.0
+        cgpa: parseFloat((Math.random() * 4 + 6).toFixed(2)),
         phone: faker.number.int({ min: 1000000000, max: 9999999999 }).toString(),
         address: faker.location.streetAddress(),
         dateOfBirth: faker.date.birthdate({ min: 18, max: 25, mode: "age" }),
@@ -67,38 +66,56 @@ router.get("/add-multiple-dummy", async (req, res) => {
   }
 });
 
-// Get all students with filtering and searching
 router.get('/', authenticateToken, async (req, res) => {
   try {
-    const studentsFromDB = await Student.find(req.query).sort({ createdAt: -1 });
+    const { search, yearOfStudy, department, academicYear } = req.query;
+    const query = {};
+
+    if (department) {
+      query.department = department;
+    }
+
+    if (academicYear) {
+      query.admissionYear = academicYear;
+    }
+
+    if (search) {
+      query.$or = [
+        { name: { $regex: search, $options: 'i' } },
+        { enrollmentNumber: { $regex: search, $options: 'i' } },
+        { email: { $regex: search, $options: 'i' } }
+      ];
+    }
+
+    const studentsFromDB = await Student.find(query).sort({ createdAt: -1 });
 
     const students = studentsFromDB.map(student => {
       const admissionStartYear = parseInt(student.admissionYear.split('-')[0]);
       const currentYear = new Date().getFullYear();
-      const currentMonth = new Date().getMonth(); // 0-11
+      const currentMonth = new Date().getMonth();
 
-      // Assuming academic year starts in August (month 7)
       let academicYearOffset = currentYear - admissionStartYear;
-      if (currentMonth < 7) {
-        academicYearOffset--;
-      }
+      if (currentMonth < 7) academicYearOffset--;
 
-      let yearOfStudy = academicYearOffset + 1;
-      if (student.admissionType === 'DSY') {
-        yearOfStudy += 1;
-      }
-      
-      const semester = yearOfStudy * 2 - (currentMonth > 0 && currentMonth < 7 ? 0 : 1);
-      
+      let calculatedYearOfStudy = academicYearOffset + 1;
+      if (student.admissionType === 'DSY') calculatedYearOfStudy += 1;
+
+      const semester = calculatedYearOfStudy * 2 - (currentMonth > 0 && currentMonth < 7 ? 0 : 1);
+
       return {
         ...student.toObject(),
-        yearOfStudy: yearOfStudy > 4 ? 'Graduated' : yearOfStudy,
+        yearOfStudy: calculatedYearOfStudy > 4 ? 'Graduated' : calculatedYearOfStudy,
         semester: semester > 8 ? 'N/A' : semester,
       };
     });
 
-    res.json({ success: true, students, total: students.length });
+    const filteredStudents = yearOfStudy
+      ? students.filter(s => s.yearOfStudy === parseInt(yearOfStudy))
+      : students;
+
+    res.json({ success: true, students: filteredStudents, total: filteredStudents.length });
   } catch (error) {
+    console.error('Error fetching students:', error);
     res.status(500).json({ success: false, message: 'Error fetching students' });
   }
 });
@@ -115,7 +132,6 @@ router.get('/:enrollmentNumber', authenticateToken, async (req, res) => {
   }
 });
 
-// Add new student
 router.post('/', authenticateToken, async (req, res) => {
   try {
     const {
@@ -134,18 +150,15 @@ router.post('/', authenticateToken, async (req, res) => {
       return res.status(400).json({ success: false, message: 'Admission Year is required.' });
     }
 
-    // Normalize admissionType
     let normalizedType = admissionType;
     if (admissionType === "Regular (First Year)") normalizedType = "Regular";
     if (admissionType === "Direct Second Year") normalizedType = "DSY";
 
-    // Check duplicate
     const existingStudent = await Student.findOne({ $or: [{ enrollmentNumber }, { email }] });
     if (existingStudent) {
       return res.status(409).json({ success: false, message: 'Student with this enrollment number or email already exists' });
     }
 
-    // Create new student with all fields
     const newStudent = await Student.create({
       name,
       email,
@@ -156,7 +169,7 @@ router.post('/', authenticateToken, async (req, res) => {
       phone,
       dateOfBirth,
       address,
-      cgpa: null // optional, can add later
+      cgpa: null 
     });
 
     res.status(201).json({ success: true, message: 'Student added successfully', student: newStudent });
@@ -166,11 +179,9 @@ router.post('/', authenticateToken, async (req, res) => {
   }
 });
 
-
 router.put('/:enrollmentNumber/mdm', authenticateToken, async (req, res) => {
   try {
     const { chosenMDM, forceUpdate = false } = req.body; 
-    // `forceUpdate: true` can be used only by admins if needed
     
     const student = await Student.findOne({ enrollmentNumber: req.params.enrollmentNumber });
 
@@ -178,7 +189,6 @@ router.put('/:enrollmentNumber/mdm', authenticateToken, async (req, res) => {
       return res.status(404).json({ success: false, message: 'Student not found' });
     }
 
-    // Prevent overwriting if already set, unless admin forces
     if (student.chosenMDM && !forceUpdate) {
       return res.status(400).json({ 
         success: false, 
@@ -204,7 +214,6 @@ router.put('/:enrollmentNumber/oe', authenticateToken, async (req, res) => {
       return res.status(404).json({ success: false, message: 'Student not found' });
     }
 
-    // Replace if exists, otherwise push
     const existingIndex = student.chosenOE.findIndex(oe => oe.semester === semester);
     if (existingIndex >= 0) {
       student.chosenOE[existingIndex].courseCode = courseCode;
@@ -228,7 +237,6 @@ router.put('/:enrollmentNumber/pe', authenticateToken, async (req, res) => {
       return res.status(404).json({ success: false, message: 'Student not found' });
     }
 
-    // Replace if exists, otherwise push
     const existingIndex = student.chosenPE.findIndex(pe => pe.semester === semester);
     if (existingIndex >= 0) {
       student.chosenPE[existingIndex].courseCode = courseCode;
@@ -243,7 +251,6 @@ router.put('/:enrollmentNumber/pe', authenticateToken, async (req, res) => {
   }
 });
 
-// Update student
 router.put('/:id', authenticateToken, async (req, res) => {
   try {
     const updatedStudent = await Student.findByIdAndUpdate(req.params.id, req.body, {
@@ -266,7 +273,6 @@ router.put('/:id', authenticateToken, async (req, res) => {
   }
 });
 
-// Delete student
 router.delete('/:id', authenticateToken, async (req, res) => {
   try {
     const studentId = req.params.id;
@@ -276,7 +282,6 @@ router.delete('/:id', authenticateToken, async (req, res) => {
       return res.status(404).json({ success: false, message: 'Student not found' });
     }
 
-    // Delete student and all related data
     await Result.deleteMany({ studentId });
     await MakeupHistory.deleteMany({ studentId });
     await Student.findByIdAndDelete(studentId);
@@ -287,8 +292,6 @@ router.delete('/:id', authenticateToken, async (req, res) => {
     res.status(500).json({ success: false, message: 'Error deleting student' });
   }
 });
-
-// Add this new route to your studentRoutes.js file
 
 router.get('/:enrollmentId/academic-status', authenticateToken, async (req, res) => {
   try {

@@ -1,4 +1,3 @@
-// models/course.model.js
 import mongoose from 'mongoose';
 
 const evaluationComponentSchema = new mongoose.Schema({

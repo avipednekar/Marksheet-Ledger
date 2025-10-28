@@ -10,7 +10,7 @@ router.get('/', authenticateToken, async (req, res) => {
     const querySemester = parseInt(semester);
     
     let allCourses = [];
-    // Flatten the course data into a single array
+    
     Object.values(courseData).forEach(deptOrYear => {
         Object.values(deptOrYear).forEach(semOrGroup => {
             Object.values(semOrGroup).forEach(semCourses => {
@@ -22,20 +22,20 @@ router.get('/', authenticateToken, async (req, res) => {
     let filteredCourses = allCourses;
 
     if (semester) {
-        // This is a simplified semester check; a real implementation might need to check year as well
-        // For now, we assume course codes are unique enough.
+        
+        
     }
     if (department) {
-        // This logic is complex with the nested structure, so we primarily filter by elective type
+        
     }
     
     if (elective === 'true') {
       const electiveTypes = ['Program Elective', 'Open Elective', 'MDM'];
       filteredCourses = allCourses.filter(course => 
-        electiveTypes.includes(course.courseType) && course.courseName.includes(`Semester ${querySemester}`) // Heuristic
+        electiveTypes.includes(course.courseType) && course.courseName.includes(`Semester ${querySemester}`) 
       );
     } else {
-        // Handle non-elective filtering if necessary
+        
     }
 
     res.json({ success: true, courses: filteredCourses });
