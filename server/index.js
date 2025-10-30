@@ -11,7 +11,6 @@ import studentRoutes from './routes/studentRoutes.js';
 import resultRoutes from './routes/resultRoutes.js';
 import dashboardRoutes from './routes/dashboardRoutes.js';
 import subjectRoutes from './routes/subjectRoutes.js';
-import teacherFilter from './routes/teacherFilter.js'
 
 import { errorHandler } from './middleware/errorHandler.js';
 
@@ -47,8 +46,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/students', studentRoutes);
 app.use('/api/results', resultRoutes);
 app.use('/api/dashboard', dashboardRoutes);
-app.use('/api/subjects', subjectRoutes); 
-app.use('/api',teacherFilter);
+app.use('/api/subjects', subjectRoutes);
 
 app.use(errorHandler);
 
